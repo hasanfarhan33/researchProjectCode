@@ -14,7 +14,7 @@ try:
     # Setting up synchronous mode 
     settings = world.get_settings()
     settings.synchronous_mode = True 
-    settings.fixed_delta_seconds = 0.05 
+    settings.fixed_delta_seconds = 0.025
     world.apply_settings(settings)
     
     # Traffic Manager 
