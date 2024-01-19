@@ -11,6 +11,7 @@ models = ["dodge", "audi", "mini", "mustang", "nissan", "jeep"]
 IM_WIDTH = 640
 IM_HEIGHT = 480
 
+# Processing image from camera sensor 
 def process_img(image):
     i = np.array(image.raw_data)
     i2 = i.reshape((IM_HEIGHT, IM_WIDTH, 4))
@@ -51,28 +52,42 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     ego_vehicle.set_attribute("role_name", "hero")
     if spawn_index == -1:
         vehicle = world.try_spawn_actor(ego_vehicle, random.choice(spawn_points))
-        # print(vehicle.get_location())
     else:
         vehicle = world.try_spawn_actor(ego_vehicle, spawn_points[spawn_index])
     
     if autonomy:
             vehicle.set_autopilot(True)
+    else: 
+        # Controlling the car manually        
+        vehicle.apply_control(carla.VehicleControl(throttle = 0.2, steer = 0.0))
+        # pass 
     
     if vehicle is not None: 
         actorList.append(vehicle)
         # return ego_vehicle
+        return vehicle
 
+
+def printing_blueprint_lib(): 
+    blueprints = [bp for bp in world.get_blueprint_library().filter("*")]
+    for blueprint in blueprints: 
+        print(blueprint.id)
+        for attr in blueprint: 
+            print(' - {}'.format(attr))
 
 # TODO: ADD CAMERA TO EGO VEHICLE
 def vehicle_cam(blueprint_lib, vehicle_id):
     camera_bp = blueprint_lib.find("sensor.camera.rgb")
     camera_bp.set_attribute("image_size_x", f"{IM_WIDTH}")
     camera_bp.set_attribute("image_size_y", f"{IM_HEIGHT}")
-    camera_bp.set_attribute("fov", "120")
+    camera_bp.set_attribute("fov", "110")
     
-    spawn_point = carla.Transform(carla.Location(x = 2.5, z = 0.7))
+    # Spawning camera relative to the car
+    spawn_point = carla.Transform(carla.Location(x = -5, z = 2))
     camera = world.spawn_actor(camera_bp, spawn_point, attach_to = vehicle_id)
     actorList.append(camera)
+    
+    # Getting info from the sensor 
     camera.listen(lambda data: process_img(data))
     
 
@@ -83,11 +98,11 @@ def manage_traffic(synchronous_mode = True, seed = 0):
     random.seed(seed)
 
 def visualize_spawn_points(spawn_points):
-    # for i, spawn_point in enumerate(spawn_points):
-        # world.debug.draw_string(spawn_point.location, str(i), life_time = 100)
+    for i, spawn_point in enumerate(spawn_points):
+        world.debug.draw_string(spawn_point.location, str(i), life_time = 100)
     
     # Visualizing a single spawn point
-    world.debug.draw_string(spawn_points[80].location, str(80), life_time = 100)
+    # world.debug.draw_string(spawn_points[80].location, str(80), life_time = 100)
 
 try:
     client = carla.Client("localhost", 2000)
@@ -96,6 +111,9 @@ try:
     client.load_world("Town05")
 
     world = client.get_world() 
+    
+    # Checking blueprint library 
+    # printing_blueprint_lib()
 
     # Setting up synchronous mode 
     settings = world.get_settings()
@@ -106,16 +124,16 @@ try:
     # Traffic Manager 
     # manage_traffic()
 
-    spectator = world.get_spectator()
-    print(spectator.get_location())
+    # spectator = world.get_spectator()
 
     blueprint_library= world.get_blueprint_library()
 
     # Spawning a vehicle 
     spawn_points = world.get_map().get_spawn_points()
+    # print(len(spawn_points))
         
     # Checking all the spawn points 
-    # visualize_spawn_points(spawn_points)
+    visualize_spawn_points(spawn_points)
         
     # Spawning single vehicle
     # merc_car = blueprint_library.filter("vehicle.mercedes.coupe_2020")[0]
@@ -129,10 +147,10 @@ try:
     # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0))
     
     # SPAWNING EGO VEHICLE 
-    add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", True)
+    vehicle = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 176)
 
 
-    # vehicle_cam(blueprint_library, ego_vehicle)
+    vehicle_cam(blueprint_library, vehicle)
 
     # Spawning multiple vehicles 
     # spawn_traffic(models, 50)
