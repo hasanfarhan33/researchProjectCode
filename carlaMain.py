@@ -34,8 +34,18 @@ class CarEnvironment:
         self.collision_history = []
         self.actor_list = [] 
         
-        self.transform = random.choice(self.world.get_map().get_spawn_points())
-        self.vehicle = self.world.spawn_actor(self.model3, self.transform)
+        self.random_spawn = False 
+        
+        if self.random_spawn:
+            # Spawning at random location
+            self.transform = random.choice(self.world.get_map().get_spawn_points())
+            self.vehicle = self.world.spawn_actor(self.model3, self.transform)
+        else:
+            # Spawning at certain location
+            self.spawn_points = self.world.get_map().get_spawn_points()
+            self.spawn_index = 176
+            self.vehicle = self.world.spawn_actor(self.model3, self.spawn_points[self.spawn_index]) 
+        
         
         self.actor_list.append(self.vehicle)
         
@@ -110,8 +120,10 @@ class CarEnvironment:
         
         return self.front_camera, reward, done, None 
             
-            
-        
+
+# TODO: Try and understand this reinforcement learning first      
+class DQNAgent:
+    pass     
         
 
 def spawn_traffic(models, maxVehicles):
@@ -226,7 +238,7 @@ try:
     # print(len(spawn_points))
         
     # Checking all the spawn points 
-    visualize_spawn_points(spawn_points)
+    # visualize_spawn_points(spawn_points)
         
     # Spawning single vehicle
     # merc_car = blueprint_library.filter("vehicle.mercedes.coupe_2020")[0]
