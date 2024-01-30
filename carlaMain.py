@@ -4,6 +4,16 @@ import random
 import numpy as np
 import cv2 
 import math
+import gymnasium as gym 
+from gymnasium import spaces
+from setup import setup
+from queue import Queue
+import atexit 
+import os 
+import signal 
+import sys 
+from absl import logging 
+import pygame 
 
 actorList = []
 
@@ -22,29 +32,84 @@ class CarEnvironment:
     im_WIDTH = IM_WIDTH 
     im_HEIGHT = IM_HEIGHT 
     rear_camera = None 
+    metadata = {"render.modes":["human"], "render_fps":60}
     
-    def __init__(self):
-        self.client = carla.Client("localhost", 2000)
+    def __init__(self, town, fps, repeat_action, start_transform_type, sensors, action_type, enable_preview, steps_per_episode, playing = False, timeout = 60):
+        self.client, self.world, self.frame, self.server = setup(town = town, fps = fps, client_timeout = timeout)
+        
         self.client.set_timeout(50.0)
-        self.world = self.client.get_world() 
+        self.world = self.world().get_map()
         self.blueprint_library = self.world.get_blueprint_library()
         self.model3 = blueprint_library.filter("model3")[0]
-        
-    def reset(self):
-        self.collision_history = []
+        self.repeat_action = repeat_action
+        self.action_type = action_type
+        self.start_transform_type = start_transform_type
+        self.sensors = sensors 
         self.actor_list = [] 
+        self.preview_camera = None 
+        self.steps_per_episode = steps_per_episode
+        self.playing = playing 
+        self.preview_camera_enabled = enable_preview
         
-        self.random_spawn = False 
+    @property
+    def observation_space(self, *args, **kwargs):
+        """Returns the observation spec of the sensor"""
+        return gym.spaces.Box(low = 0.0, high = 255.0, shape=(IM_HEIGHT, IM_WIDTH, 3), dtype=np.uint8)
+    
+    @property 
+    def action_space(self):
+        """Returns the expected action passed to the 'step' method"""
+        if self.action_type == "continuous":
+            return gym.spaces.Box(low=np.array([-1.0, -1.0]), high = np.array([1.0, 1.0]))
+        elif self.action_type == "discrete":
+            return gym.spaces.MultiDiscrete([4, 9])
+    
+    #TODO: Might not need this        
+    def seed(self, seed): 
+        if not seed: 
+            seed = 7 
+        random.seed(seed)
+        self._np_random = np.random.RandomState(seed)
+        return seed
+    
+    def reset(self):
+        self.destroy_agents()
+        self.collision_history = []
+        self.lane_invasion_hist = [] 
+        self.actor_list = [] 
+        self.frame_step = 0 
+        self.out_of_loop = 0 
+        self.dist_from_start = 0
         
-        if self.random_spawn:
-            # Spawning at random location
-            self.transform = random.choice(self.world.get_map().get_spawn_points())
-            self.vehicle = self.world.spawn_actor(self.model3, self.transform)
-        else:
-            # Spawning at certain location
-            self.spawn_points = self.world.get_map().get_spawn_points()
-            self.spawn_index = 176
-            self.vehicle = self.world.spawn_actor(self.model3, self.spawn_points[self.spawn_index]) 
+        self.front_image_queue = Queue() 
+        self.preview_image_queue = Queue()
+        
+        # When CARLA breaks or spawn point is already occupied 
+        spawn_start = time.time()
+        while True: 
+            try:
+                self.start_transform = self._get_start_transform()
+                self.curr_loc = self.start_transform.location
+                self.random_spawn = False 
+                
+                # Spawning at a random location
+                if self.random_spawn:
+                    self.start_transform = random.choice(self.world.get_map().get_spawn_points())
+                    self.vehicle = self.world.spawn_actor(self.model3, self.start_transform)
+                # Spawning at a certain location
+                else:
+                    self.spawn_points = self.world.get_map().get_spawn_points() 
+                    self.spawn_index = 176
+                    self.vehicle = self.world.spawn_actor(self.model3, self.spawn_points[self.spawn_index])
+                    
+                break 
+            except Exception as e:
+                logging.error("Error carla 141 {}".format(str(e)))
+                time.sleep(0.01)
+        
+            if time.time() > spawn_start + 3: 
+                raise Exception("Can't spawn a car!")
+        
         
         
         self.actor_list.append(self.vehicle)
@@ -52,20 +117,36 @@ class CarEnvironment:
         self.rgb_cam = self.blueprint_library.find("sensor.camera.rgb")
         self.rgb_cam.set_attribute("image_size_x", f"{self.im_WIDTH}")
         self.rgb_cam.set_attribute("image_size_y", f"{self.im_HEIGHT}")
-        self.rgb_cam.set_attribute("fov", f"110")
+        self.rgb_cam.set_attribute("fov", "90")
         
         transform = carla.Transform(carla.Location(x = -5, z = 2))
         self.sensor = self.world.spawn_actor(self.rgb_cam, transform, attach_to = self.vehicle)
         self.actor_list.append(self.sensor)
-        self.sensor.listen(lambda data: self.process_img(data))
+        self.sensor.listen(self.front_image_queue.put)
+        
+        
+        # Top down camera 
+        if self.preview_camera_enabled:
+            self.preview_cam = self.world.get_blueprint_library().find("sensor.camera.rgb")
+            self.preview_cam.set_attribute("image_size_x", 400)
+            self.preview_cam.set_attribute("image_size_y", 400)
+            self.preview_cam.set_attribute("fov", 100)
+            transform = carla.Transform(carla.Location(x=-5.5, z=2.5), carla.Rotation(pitch=8.0))
+            self.preview_sensor = self.world.spawn_actor(self.preview_cam, transform, attach_to = self.vehicle, attachment_type=carla.AttachmentType.SpringArm)
+            self.preview_sensor.listen(self.preview_image_queue.put)
+            self.actor_list.append(self.preview_sensor)
+            
+            
         
         self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 0.0))
         time.sleep(4)
         
-        col_sensor = self.blueprint_library.find("sensor.other.collision")
-        self.col_sensor = self.world.spawn_actor(col_sensor, transform, attach_to = self.vehicle)
-        self.actor_list.append(self.col_sensor)
-        self.col_sensor.listen(lambda event: self.collision_data(event))
+        
+        
+        # col_sensor = self.blueprint_library.find("sensor.other.collision")
+        # self.col_sensor = self.world.spawn_actor(col_sensor, transform, attach_to = self.vehicle)
+        # self.actor_list.append(self.col_sensor)
+        # self.col_sensor.listen(lambda event: self.collision_data(event))
         
         while self.front_camera is None: 
             time.sleep(0.01)
@@ -120,12 +201,8 @@ class CarEnvironment:
         
         return self.front_camera, reward, done, None 
             
-
-# TODO: Try and understand this reinforcement learning first      
-class DQNAgent:
-    pass     
+ 
         
-
 def spawn_traffic(models, maxVehicles):
     manage_traffic()
     blueprints = [] 
