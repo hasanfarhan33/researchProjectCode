@@ -14,14 +14,10 @@ import signal
 import sys 
 from absl import logging 
 import pygame 
+import graphics
 
-actorList = []
-
-models = ["dodge", "audi", "mini", "mustang", "nissan", "jeep"]
-
-
-IM_WIDTH = 640
-IM_HEIGHT = 480
+IM_WIDTH = 400
+IM_HEIGHT = 400
     
 SHOW_PREVIEW = False
 SECONDS_PER_EPISODE = 10
@@ -81,15 +77,13 @@ class CarEnvironment:
         self.out_of_loop = 0 
         self.dist_from_start = 0
         
-        self.front_image_queue = Queue() 
+        self.chase_cam_queue = Queue() 
         self.preview_image_queue = Queue()
         
         # When CARLA breaks or spawn point is already occupied 
         spawn_start = time.time()
         while True: 
             try:
-                self.start_transform = self._get_start_transform()
-                self.curr_loc = self.start_transform.location
                 self.random_spawn = False 
                 
                 # Spawning at a random location
@@ -121,8 +115,9 @@ class CarEnvironment:
         
         transform = carla.Transform(carla.Location(x = -5, z = 2))
         self.sensor = self.world.spawn_actor(self.rgb_cam, transform, attach_to = self.vehicle)
+        self.sensor.listen(self.chase_cam_queue.put)
         self.actor_list.append(self.sensor)
-        self.sensor.listen(self.front_image_queue.put)
+        
         
         
         # Top down camera 
@@ -138,28 +133,164 @@ class CarEnvironment:
             
             
         
-        self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 0.0))
+        self.vehicle.apply_control(carla.VehicleControl(throttle = 1.0, brake = 1.0))
         time.sleep(4)
         
+        # Collision History 
+        self.collision_hist = [] 
+        self.lane_invasion_hist = [] 
         
+        # Collision sensor
+        colsensor = self.blueprint_library.find("sensor.other.collision")
+        self.colsensor = self.world.spawn_actor(colsensor, carla.Transform(), attach_to = self.vehicle)
+        self.actor_list.append(self.colsensor)
         
-        # col_sensor = self.blueprint_library.find("sensor.other.collision")
-        # self.col_sensor = self.world.spawn_actor(col_sensor, transform, attach_to = self.vehicle)
-        # self.actor_list.append(self.col_sensor)
-        # self.col_sensor.listen(lambda event: self.collision_data(event))
+        # Lane sensor 
+        lanesensor = self.blueprint_library.find("sensor.other.lane_invasion")
+        self.lanesensor = self.world.spawn_actor(lanesensor, carla.Transform(), attach_to=self.vehicle)
+        self.actor_list.append(self.lanesensor)
         
-        while self.front_camera is None: 
+        self.world.tick() 
+        
+        # Wait for a camera to send first image 
+        while self.chase_cam_queue.empty():
+            logging.debug("Waiting for camera to be ready")
             time.sleep(0.01)
+            self.world.tick()
+        
+        # Disengage brakes 
+        self.vehicle.apply_control(carla.VehicleControl(brake = 0.0))
+        
+        image = self.chase_cam_queue.get() 
+        image = np.array(image.raw_data)
+        image = image.reshape((IM_HEIGHT, IM_WIDTH, -1))
+        image = image[:, :, :3]
+        
+        
+        return image
+    
+    def step(self, action):
+        total_reward = 0 
+        for _ in range(self.repeat_action):
+            obs, rew, done, info = self._step(action)
+            total_reward += rew 
+            if done: 
+                break 
+        return obs, total_reward, done, info
+    
+    # Steps Environment 
+    def _step(self, action):
+        self.world.tick()
+        self.render()
+        
+        self.frame_step += 1
+        
+        # Apply control to the vehicle based on an action 
+        if self.action_type == "continuous":
+            if action[0] > 0: 
+                action = carla.VehicleControl(throttle = float(action[0]), brake = 0)
+            else: 
+                action = carla.VehicleControl(throttle = 0, brake = -float(action[0]))
+        elif self.action_type == "discrete": 
+            if action[0] == 0: 
+                action = carla.VehicleControl(throttle = 0, brake = 1)
+            else: 
+                action = carla.VehicleControl(throttle = float((action[0])/2), brake = 0)
+        else: 
+            raise NotImplementedError()
+        
+        logging.debug('{}, {}'.format(action.throttle, action.brake))
+        self.vehicle.apply_control(action)
+        
+        # Calculating the speed of the vehicle (kmh)
+        v = self.vehicle.get_velocity()
+        kmh = 3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2)
+        
+        loc = self.vehicle.get_location()
+        new_dist_from_start = loc.distance(self.start_transform.location)
+        square_dist_diff = new_dist_from_start ** 2 - self.dist_from_start ** 2 
+        self.dist_from_start = new_dist_from_start 
+        
+        image = self.chase_cam_queue.get()
+        image = np.arry(image.raw_data)
+        image = image.reshape((IM_HEIGHT, IM_WIDTH, -1))
+        
+        if 'rgb' in self.sensors: 
+            image = image[:, :, :3]
+        
+        
+        done = False 
+        reward = 0 
+        info = dict() 
+        
+        # If the car collides - end the episode and send back a penalty
+        # TODO: Add lane invasion history later
+        if len(self.collision_hist) != 0: 
+            done = True 
+            reward += -100 
+            self.collision_hist = [] 
             
-        self.episode_start = time.time() 
+        # Reward for speed and distance 
+        reward += 0.1 * kmh 
+        reward += square_dist_diff
         
-        self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 0.0))
+        if self.frame_step >= self.steps_per_episode: 
+            done = True 
+            
+        if done: 
+            logging.debug("Env lasts {} steps, restarting ...".format(self.frame_step))
+            self.destroy_agents()
+            
+        return image, reward, done, info
+            
+    
+    def close(self): 
+        logging.info("Closes the CARLA server with process PID {}".format(self.server.pid))
+        os.killpg(self.server.pid, signal.SIGKILL)
+        atexit.unregister(lambda: os.killpg(self.server.pid, signal.SIGKILL))
         
-        return self.front_camera
+    def render(self, mode = "human"):
+        if self.preview_camera_enabled:
+            self.display, self._clock, self._font = graphics.setup(width = IM_WIDTH, height = IM_HEIGHT, render=(mode=="human"))
+            
+            preview_img = self.preview_image_queue.get() 
+            preview_img = np.array(preview_img.raw_data)
+            preview_img = preview_img.reshape(IM_WIDTH, IM_HEIGHT, -1)
+            graphics.make_dashboard(
+                display = self.display, 
+                font = self._font, 
+                clock = self.clock, 
+                observations = {"preview_camera":preview_img}, 
+            )
+            
+            if mode == "human": 
+                pygame.display.flip()
+            else: 
+                raise NotImplementedError() 
+            
+    def _destroy_agents(self): 
+        for actor in self.actor_list: 
+            # If it has a callback attached, remove it first 
+            if hasattr(actor, "is_listening") and actor.is_listening: 
+                actor.stop()
+                
+            # If it is still alive destroy it 
+            if actor.is_alive: 
+                actor.destroy() 
+        self.actor_list = [] 
     
-    def collision_data(self, event):
-        self.collision_history.append(event)
+    def _collision_data(self, event): 
+        collision_actor_id = event.other_actor.type_id 
+        collision_impulse = math.sqrt(event.normal_impulse.x ** 2 + event.normal_impulse.y ** 2 + event.normal_impulse.z ** 2)
+        
+        # Add collision 
+        self.collision_hist.append(event)
     
+    # TODO: Use it later
+    def _lane_invasion_data(self, event): 
+        self.lane_invasion_hist.append(event)
+        
+        
     # Processing image from camera sensor 
     def process_img(self, image):
         i = np.array(image.raw_data)
@@ -172,36 +303,7 @@ class CarEnvironment:
         
         self.front_camera = i3
         
-    def step(self, action):
-        # Go left 
-        if action == 0: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.2, steer = -1.0 * self.STEER_AMT))
-        # Go straight
-        elif action == 1:
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.2, steer = 0))
-        # Turn right
-        elif action == 2:
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 1.0, steer = 1.0 * self.STEER_AMT))
-            
-        v = self.vehicle.get_velocity()
-        kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
         
-        if len(self.collision_history) != 0: 
-            done = True 
-            reward = -200 
-        elif kmh < 50: 
-            done = False 
-            reward = -1 
-        else: 
-            done = False 
-            reward = 1 
-            
-        if self.episode_start + SECONDS_PER_EPISODE < time.time():
-            done = True 
-        
-        return self.front_camera, reward, done, None 
-            
- 
         
 def spawn_traffic(models, maxVehicles):
     manage_traffic()
