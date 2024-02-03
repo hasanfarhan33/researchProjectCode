@@ -30,10 +30,10 @@ class CarEnvironment:
     rear_camera = None 
     metadata = {"render.modes":["human"], "render_fps":60}
     
-    def __init__(self, town, fps, repeat_action, start_transform_type, sensors, action_type, enable_preview, steps_per_episode, playing = False, timeout = 60):
+    def __init__(self, town, fps, repeat_action, start_transform_type, sensors, action_type, enable_preview, steps_per_episode, playing = False, timeout = 150):
         self.client, self.world, self.frame, self.server = setup(town = town, fps = fps, client_timeout = timeout)
         
-        self.client.set_timeout(50.0)
+        self.client.set_timeout(timeout)
         self.world = self.world().get_map()
         self.blueprint_library = self.world.get_blueprint_library()
         self.model3 = self.blueprint_library.filter("model3")[0]

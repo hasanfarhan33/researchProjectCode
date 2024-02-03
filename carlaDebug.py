@@ -3,6 +3,7 @@ import carla
 import random 
 import numpy as np 
 import cv2 
+import math
 
 actorList = [] 
 models = ["dodge", "audi", "mini", "mustang", "nissan", "jeep"]
@@ -10,9 +11,19 @@ IM_WIDTH = 200
 IM_HEIGHT = 200
 FPS = 10
 
-
-#TODO: Try adding a lidar sensor 
-
+def add_lidar(blueprint_lib, vehicle_id):
+    lidar_bp = blueprint_lib.find("sensor.lidar.ray_cast")
+    lidar_bp.set_attribute("channels", str(32))
+    lidar_bp.set_attribute("points_per_second", str(5000))
+    lidar_bp.set_attribute("rotation_frequency", str(40))
+    lidar_bp.set_attribute("range", str(15))
+    lidar_location = carla.Location(0, 0, 2) 
+    lidar_rotation = carla.Rotation(0, 0, 0)
+    lidar_transform = carla.Transform(lidar_location, lidar_rotation)
+    lidar_sensor = world.spawn_actor(lidar_bp, lidar_transform, attach_to = vehicle_id)
+    actorList.append(lidar_sensor)
+    lidar_sensor.listen(lambda point_cloud: point_cloud.save_to_disk('./lidarData/%.6d.ply' % point_cloud.frame))
+    
 
 def visualize_spawn_points(spawn_points):
     for i, spawn_point in enumerate(spawn_points):
@@ -84,7 +95,7 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
             vehicle.set_autopilot(True)
     else: 
         # Controlling the car manually        
-        vehicle.apply_control(carla.VehicleControl(throttle = 1.0, brake = 0.5, steer = 0.0))
+        vehicle.apply_control(carla.VehicleControl(throttle = 1.0, brake = 0.0, steer = 0.0))
         # pass 
     
     if vehicle is not None: 
@@ -143,14 +154,18 @@ try:
 
     vehicle_cam(blueprint_library, vehicle)
     heli_cam(blueprint_library, vehicle)
+    # add_lidar(blueprint_library, vehicle)
 
     # Spawning multiple vehicles 
     # spawn_traffic(models, 50)
-
-
+    
 
     while True:
         world.tick()
+        # Printing speed of the vehicle 
+        velocity = vehicle.get_velocity()
+        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        print("The vehicle is moving at ", kmh, "km/h")
 
 finally:
     for actor in actorList: 
