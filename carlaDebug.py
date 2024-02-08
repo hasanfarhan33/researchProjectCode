@@ -74,14 +74,6 @@ def heli_cam(blueprint_lib, vehicle_id):
     
     heli_sensor.listen(lambda data: process_img(data, "Helicopter Camera"))
     
-def semantic_cam(blueprint_lib, vehicle_id): 
-    camera = carla.sensor.Camera("SemanticCamera", PostProcessing = "SemanticSegmentation")
-    camera.set(FOV = 90.0)
-    camera.set_image_size(IM_WIDTH, IM_HEIGHT)
-    camera.set_position(x = 0.30, y = 0, z = -1.30)
-    actorList.append(camera)
-    camera.listen(lambda data: process_img(data, "Semantic Camera"))
-    
 def printing_blueprint_lib(): 
     blueprints = [bp for bp in world.get_blueprint_library().filter("*")]
     for blueprint in blueprints: 
@@ -102,8 +94,9 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     if autonomy:
             vehicle.set_autopilot(True)
     else: 
-        # Controlling the car manually        
-        vehicle.apply_control(carla.VehicleControl(throttle = 1.0, brake = 0.0, steer = 0.0))
+        # Controlling the car manually  
+        steerAmount = 0.25      
+        vehicle.apply_control(carla.VehicleControl(throttle = 1.0, brake = 0.0, steer = steerAmount))
         # pass 
     
     if vehicle is not None: 
@@ -161,9 +154,7 @@ try:
 
 
     vehicle_cam(blueprint_library, vehicle)
-    # heli_cam(blueprint_library, vehicle)
-    # add_lidar(blueprint_library, vehicle)
-    semantic_cam(blueprint_library, vehicle)
+    heli_cam(blueprint_library, vehicle)
 
     # Spawning multiple vehicles 
     # spawn_traffic(models, 50)
