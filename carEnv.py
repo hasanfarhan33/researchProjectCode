@@ -2,9 +2,9 @@ import random
 import time 
 import numpy as np 
 import math 
-# import gym 
+# import gym  
 # from gym import spaces
-import gymnasium as gym 
+import gymnasium as gym
 from gymnasium import spaces
 import carla 
 import cv2
@@ -19,6 +19,13 @@ FIXED_DELTA_SECONDS = 0.2
 
 SHOW_PREVIEW = True 
 
+'''
+Things to define
+
+State, actions, state transition and reward function 
+
+'''
+
 class CarEnv(gym.Env):
     SHOW_CAM = SHOW_PREVIEW 
     STEER_AMT = 1.0
@@ -28,11 +35,22 @@ class CarEnv(gym.Env):
     CAMERA_POS_Z = 1.3 
     CAMERA_POS_X = 1.4 
     
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
+    
     def __init__(self, world_name = "Town05"):
         super(CarEnv, self).__init__() 
         # 9 possible inputs for steering, and 4 inputs for braking and throttle 
         self.action_space = spaces.MultiDiscrete([9, 4])
-        self.observation_space = spaces.Box(low = 0.0, high = 1.0, shape=(HEIGHT, WIDTH, N_CHANNELS), dtype = np.float32)
+        
+        """
+        Carla observation spaces 
+        Box --> Array of floating point numbers [1.3, 2.3, 4.3, 8.2]
+        Discrete --> Integer 1 
+        MultiDiscrete --> Array of Integers [2, 1, 5, 8] 
+        
+        """
+        
+        self.observation_space = spaces.Box(low = 0.0, high = 1.0, shape=(HEIGHT, WIDTH, N_CHANNELS), dtype = np.uint8)
         
         self.client = carla.Client("localhost", 2000)
         self.client.set_timeout(150.0)
@@ -55,11 +73,18 @@ class CarEnv(gym.Env):
         for actor in self.world.get_actors().filter("*vehicle*"): 
             actor.destroy() 
  
- 
+    
+    def render(self, mode = "human"): 
+        pass
+    
     def reset(self, seed = None): 
+        '''
+        Returns observation --> self.frontCamera/255.0
+        '''
         self.collision_hist = [] 
         self.actor_list = [] 
         self.randomSpawn = False 
+        truncated = False 
         
         if self.randomSpawn: 
             self.transform = random.choice(self.world.get_map().get_spawn_points()) 
@@ -82,29 +107,29 @@ class CarEnv(gym.Env):
         self.actor_list.append(self.vehicle)
         self.initial_location = self.vehicle.get_location() 
         
-        # TODO: Try and add semantic camera next time
-        self.camera_bp = self.blueprint_library.find("sensor.camera.rgb")
-        self.camera_bp.set_attribute("image_size_x", f"{self.imageWidth}")
-        self.camera_bp.set_attribute("image_size_y", f"{self.imageHeight}")
-        self.camera_bp.set_attribute("fov", f"90")
         
-        # Spawning the camera relative to the car 
-        spawn_point = carla.Transform(carla.Location(x = -5, z = 2))
-        self.vehicle_cam = self.world.spawn_actor(self.camera_bp, spawn_point, attach_to = self.vehicle)
-        self.actor_list.append(self.vehicle_cam)
-        self.vehicle_cam.listen(lambda image: self.process_img(image))
+        # TODO: CHANGE TO NORMAL CAMERA
+        self.semantic_camera = self.blueprint_library.find("sensor.camera.semantic_segmentation")
+        self.semantic_camera.set_attribute("image_size_x", f"{self.imageWidth}")        
+        self.semantic_camera.set_attribute("image_size_y", f"{self.imageHeight}")        
+        self.semantic_camera.set_attribute("fov", f"90")
+        
+        camera_init_trans = carla.Transform(carla.Location(z = self.CAMERA_POS_Z, x = self.CAMERA_POS_X))
+        self.sensor = self.world.spawn_actor(self.semantic_camera, camera_init_trans, attach_to = self.vehicle)
+        self.actor_list.append(self.sensor)
+        self.sensor.listen(lambda data: self.process_img(data))
         
         self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 0.0))
         time.sleep(2)
-
+        
         # Showing camera at the spawn point 
         if self.SHOW_CAM: 
-            cv2.namedWindow("Camera Footage", cv2.WINDOW_AUTOSIZE)
-            cv2.imshow("Camera Footage", self.frontCamera)
+            cv2.namedWindow("Semantic Camera Footage", cv2.WINDOW_AUTOSIZE)
+            cv2.imshow("Semantic Camera Footage", self.frontCamera)
             cv2.waitKey(1)
         
         colsensor = self.blueprint_library.find("sensor.other.collision")
-        self.colsensor = self.world.spawn_actor(colsensor, spawn_point, attach_to = self.vehicle)
+        self.colsensor = self.world.spawn_actor(colsensor, camera_init_trans, attach_to = self.vehicle)
         self.actor_list.append(self.colsensor)
         self.colsensor.listen(lambda event: self.collision_data(event))
         
@@ -117,46 +142,51 @@ class CarEnv(gym.Env):
         self.step_counter = 0 
         self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 0.0))
         
-        return self.frontCamera/255.0
+        info = {}
+        
+        return self.frontCamera/255.0, info
             
-    def step(self, action): 
+    def step(self, action):
+        '''
+        Returns observation, reward, terminated, truncated, info 
+        ''' 
         self.step_counter += 1 
-        steerAmount = action[0] 
+        steer = action[0] 
         throttle = action[1] 
         
         # Mapping steering actions 
-        if steerAmount == 0: 
-            steerAmount = -0.9 
-        elif steerAmount == 1: 
-            steerAmount = -0.25 
-        elif steerAmount == 2: 
-            steerAmount = -0.1 
-        elif steerAmount == 3: 
-            steerAmount = 0.05
-        elif steerAmount == 4: 
-            steerAmount = 0
-        elif steerAmount == 5: 
-            steerAmount = 0.05 
-        elif steerAmount == 6: 
-            steerAmount = 0.1 
-        elif steerAmount == 7:
-            steerAmount == 0.25 
-        elif steerAmount == 8: 
-            steerAmount = 0.9 
+        if steer == 0: 
+            steer = -0.9 
+        elif steer == 1: 
+            steer = -0.25 
+        elif steer == 2: 
+            steer = -0.1 
+        elif steer == 3: 
+            steer = 0.05
+        elif steer == 4: 
+            steer = 0
+        elif steer == 5: 
+            steer = 0.05 
+        elif steer == 6: 
+            steer = 0.1 
+        elif steer == 7:
+            steer == 0.25 
+        elif steer == 8: 
+            steer = 0.9 
             
         # Mapping throttle 
         if throttle == 0: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 1.0, steer = steerAmount))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, steer = float(steer), brake = 1.0))
         elif throttle == 1: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.3, brake = 0.0, steer = steerAmount))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.3, steer = float(steer), brake = 0.0))
         elif throttle == 2: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.7, brake = 0.0, steer = steerAmount))
-        else: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 1.0, brake = 0.0, steer = steerAmount))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.7, steer = float(steer), brake = 0.0))
+        elif throttle == 3: 
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 1.0, steer = float(steer), brake = 0.0))
             
         # Printing steer and throttle every 50 steps 
         if self.step_counter % 50 == 0: 
-            print("Steer input from model: ", steerAmount, "Throttle: ", throttle)
+            print("Steer input from model: ", steer, "Throttle: ", throttle)
             
         
         v = self.vehicle.get_velocity() 
@@ -174,28 +204,29 @@ class CarEnv(gym.Env):
         # Track steering lock duration to prevent tail chasing 
         lockDuration = 0 
         if self.steering_lock == False: 
-            if steerAmount <-0.6 or steerAmount > 0.6: 
+            if steer < -0.6 or steer > 0.6: 
                 self.steering_lock = True 
                 self.steering_lock_start = time.time() 
                 
         else:
-            if steerAmount < -0.6 or steerAmount > 0.6: 
+            if steer < -0.6 or steer > 0.6: 
                 lockDuration = time.time() - self.steering_lock_start
                 
         # Rewards 
         reward = 0 
-        done = False 
+        terminated = False 
+        truncated = False 
         
         # Punish for collision 
         if len(self.collision_hist) != 0: 
-            done = True 
+            terminated = True 
             reward = reward - 300 
             self.cleanup() 
             
         # Punish for locking wheels 
         if lockDuration > 3: 
             reward = reward - 150 
-            done = True 
+            terminated = True 
             self.cleanup() 
         elif lockDuration > 1: 
             reward = reward - 20 
@@ -220,12 +251,15 @@ class CarEnv(gym.Env):
             
         # Check for episode duration 
         if self.episode_start + SECONDS_PER_EPISODE < time.time(): 
-            done = True 
+            terminated = True 
             self.cleanup() 
         
-        return cam/255.0, reward, done, {} 
+        observation = cam/255.0
+        
+        return observation, reward, terminated, truncated, {} 
     
     def process_img(self, image): 
+        image.convert(carla.ColorConverter.CityScapesPalette)
         i = np.array(image.raw_data)
         i = i.reshape((self.imageHeight, self.imageWidth, 4))[:, :, :3] 
         self.frontCamera = i 
