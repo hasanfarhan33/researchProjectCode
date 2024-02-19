@@ -27,7 +27,7 @@ def add_lidar(blueprint_lib, vehicle_id):
 
 def visualize_spawn_points(spawn_points):
     for i, spawn_point in enumerate(spawn_points):
-        world.debug.draw_string(spawn_point.location, str(i), life_time = 100)
+        world.debug.draw_string(spawn_point.location, str(i), life_time = 400)
     
     # Visualizing a single spawn point
     # world.debug.draw_string(spawn_points[80].location, str(80), life_time = 100)
@@ -60,6 +60,17 @@ def vehicle_cam(blueprint_lib, vehicle_id):
     
     # Getting info from the sensor 
     camera.listen(lambda data: process_img(data, "Chase Cam"))
+    
+def add_lane_sensor(blueprint_lib, vehicle_id): 
+    lane_sensor = blueprint_lib.find("sensor.other.lane_invasion")
+    spawn_point = carla.Transform(carla.Location(x = 0, z = 0))
+    lane_sensor = world.spawn_actor(lane_sensor, spawn_point, attach_to = vehicle_id)
+    actorList.append(lane_sensor)
+    
+    lane_sensor.listen(lambda event: lane_invasion_data(event))
+
+def lane_invasion_data(event): 
+    print("The car crossed the lane: ", event)
 
 def heli_cam(blueprint_lib, vehicle_id):
     camera_bp = blueprint_lib.find("sensor.camera.rgb")
@@ -96,7 +107,7 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     else: 
         # Controlling the car manually  
         steerAmount = 0.25      
-        vehicle.apply_control(carla.VehicleControl(throttle = 1.0, brake = 0.0, steer = steerAmount))
+        vehicle.apply_control(carla.VehicleControl(throttle = 0.15, brake = 0.0, steer = 0.0))
         # pass 
     
     if vehicle is not None: 
@@ -108,7 +119,7 @@ try:
     client = carla.Client("localhost", 2000)
     client.set_timeout(150.0)
 
-    client.load_world("Town05")
+    client.load_world("Town04")
 
     world = client.get_world() 
     world.set_weather(carla.WeatherParameters.ClearNoon)
@@ -150,11 +161,12 @@ try:
     # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0))
     
     # SPAWNING EGO VEHICLE 
-    vehicle = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 176)
+    vehicle = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
 
 
-    vehicle_cam(blueprint_library, vehicle)
+    # vehicle_cam(blueprint_library, vehicle)
     heli_cam(blueprint_library, vehicle)
+    add_lane_sensor(blueprint_library, vehicle)
 
     # Spawning multiple vehicles 
     # spawn_traffic(models, 50)
@@ -163,9 +175,9 @@ try:
     while True:
         world.tick()
         # Printing speed of the vehicle 
-        velocity = vehicle.get_velocity()
-        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        print("The vehicle is moving at ", kmh, "km/h")
+        # velocity = vehicle.get_velocity()
+        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        # print("The vehicle is moving at ", kmh, "km/h")
 
 finally:
     for actor in actorList: 

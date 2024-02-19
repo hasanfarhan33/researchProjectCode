@@ -3,37 +3,54 @@ from typing import Callable
 import os 
 from carEnv import CarEnv 
 import time 
+import wandb
+from wandb.integration.sb3 import WandbCallback
+from carEnvBrake import CarEnvBrake
 
 LEARNING_RATE = 0.001
 loadPreviousModel = False 
 
-modelName = "Jimothy"
-modelsDirectory = f"models/{modelName}"
-logDirectory = f"logs/{modelName}"
+# modelName = "Jimothy"
+# modelsDirectory = f"models/{modelName}"
+# logDirectory = f"logs/{modelName}"
 
-if not os.path.exists(modelsDirectory): 
-    os.makedirs(modelsDirectory)
+# if not os.path.exists(modelsDirectory): 
+#     os.makedirs(modelsDirectory)
     
-if not os.path.exists(logDirectory): 
-    os.makedirs(logDirectory)
+# if not os.path.exists(logDirectory): 
+#     os.makedirs(logDirectory)
+
+config = {
+    "policy_type":"MlpPolicy", 
+}
+
+run = wandb.init(
+    project = "Carla_Research_Project", 
+    config = config, 
+    sync_tensorboard=True, 
+)
+
     
 print("Connecting to environment...")
 
-env = CarEnv() 
+steeringThrottleEnv = CarEnv() 
+steeringThrottleBrakeEnv = CarEnvBrake()
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load(f"{modelsDirectory}/{timestepNumber}", device = "cuda")
+    # model = PPO.load(f"{modelsDirectory}/{timestepNumber}", device = "cuda")
 else:
-    model = PPO("MlpPolicy", env, verbose = 1, learning_rate = LEARNING_RATE, tensorboard_log=logDirectory, device = "cuda")
+    model = PPO(config["policy_type"], steeringThrottleBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, tensorboard_log=f"runs/{run.id}", device = "cuda")
 
 TIMESTEPS = 500_000 
 iters = 0 
 
-while iters < 3: 
+while iters < 2: 
     iters += 1 
     print("Iteration ", iters, " is to commence...")
-    model.learn(total_timesteps = TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"Jimothy", log_interval = 4)
+    model.learn(total_timesteps = TIMESTEPS, callback=WandbCallback(gradient_save_freq=100, model_save_path = f"models/{run.id}", model_save_freq=200, verbose = 2), reset_num_timesteps=False, log_interval = 4)
     print("Iteration ", iters, " has been trained...")
-    model.save(f"{modelsDirectory}/{TIMESTEPS*iters}")
+
+run.finish() 
+    
     
