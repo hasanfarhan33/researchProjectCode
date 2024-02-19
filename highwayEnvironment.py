@@ -205,7 +205,7 @@ class HighwayEnvironment(gym.Env):
         return observation, reward, terminated, truncated, {} 
     
     def process_img(self, image): 
-        image.convert(carla.ColorConverted.CityScapesPalette)
+        image.convert(carla.ColorConverter.CityScapesPalette)
         i = np.array(image.raw_data)
         i = i.reshape((self.imageHeight, self.imageWidth, 4))[:, :, 3]
         self.frontCamera = i 
