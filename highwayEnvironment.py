@@ -133,7 +133,7 @@ class HighwayEnvironment(gym.Env):
         if throttle == 0: 
             throttle = 0.0 
         elif throttle == 1: 
-            throttle == 0.3 
+            throttle == 0.5 
         
         # Mapping brake 
         if brake == 0: 
@@ -207,7 +207,7 @@ class HighwayEnvironment(gym.Env):
     def process_img(self, image): 
         image.convert(carla.ColorConverter.CityScapesPalette)
         i = np.array(image.raw_data)
-        i = i.reshape((self.imageHeight, self.imageWidth, 4))[:, :, 3]
+        i = i.reshape((self.imageHeight, self.imageWidth, 4))[:, :, :3] 
         self.frontCamera = i 
         
     def collision_data(self, event):
