@@ -17,7 +17,7 @@ FIXED_DELTA_SECONDS = 0.2
 
 SHOW_PREVIEW = True 
 
-class HighwayEnvironment(gym.Env): 
+class HighwayEnvironmentNoBrakes(gym.Env): 
     SHOW_CAM = SHOW_PREVIEW 
     STEER_AMT = 1.0 
     imageWidth = WIDTH 
@@ -27,10 +27,10 @@ class HighwayEnvironment(gym.Env):
     CAMERA_POS_X = 1.4 
     
     def __init__(self, world_name = "Town04"): 
-        super(HighwayEnvironment, self).__init__() 
+        super(HighwayEnvironmentNoBrakes, self).__init__() 
         
-        # 3 possible inputs for steering, 2 for throttle and 2 for braking 
-        self.action_space = spaces.MultiDiscrete([3, 2, 2])
+        # 3 possible inputs for steering, 2 for throttle
+        self.action_space = spaces.MultiDiscrete([3, 2])
         self.observation_space = spaces.Box(low = 0.0, high = 1.0, shape = (HEIGHT, WIDTH, N_CHANNELS), dtype = np.uint8)
         
         self.client = carla.Client("localhost", 2000)
@@ -119,7 +119,6 @@ class HighwayEnvironment(gym.Env):
         self.step_counter += 1
         steer = action[0] 
         throttle = action[1] 
-        brake = action[2] 
         
         # Mapping steering actions
         if steer == 0:
@@ -130,20 +129,15 @@ class HighwayEnvironment(gym.Env):
             steer = 0.1 
         
         # Mapping Throttle 
+        #TODO: Find better values of throttle 
         if throttle == 0: 
-            throttle = 0.0 
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
         elif throttle == 1: 
-            throttle == 0.5 
-        
-        # Mapping brake 
-        if brake == 0: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = float(throttle), steer = float(steer), brake = 0.0))
-        elif brake == 1:
-            self.vehicle.apply_control(carla.VehicleControl(throttle = float(throttle), steer = float(steer), brake = 0.3))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 1.0, steer = float(steer))) 
         
         # Printing steer, throttle and brake every 50 steps 
         if self.step_counter % 50 == 0: 
-            print("Steer: ", steer, "Throttle: ", throttle, "Brake: ", brake)
+            print("Steer: ", steer, "Throttle: ", throttle)
             
         v = self.vehicle.get_velocity() 
         kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
@@ -175,7 +169,7 @@ class HighwayEnvironment(gym.Env):
         # Punish for collision and lane invasion
         if len(self.collision_hist)!= 0 or len(self.lane_invasion_hist) != 0: 
             terminated = True 
-            reward = reward - 300 
+            reward = reward - 500 
             self.cleanup() 
             
         # Reward for making distance

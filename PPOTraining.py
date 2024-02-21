@@ -7,6 +7,7 @@ import wandb
 from wandb.integration.sb3 import WandbCallback
 from carEnvBrake import CarEnvBrake
 from highwayEnvironment import HighwayEnvironment
+from highwayEnvironmentNoBrakes import HighwayEnvironmentNoBrakes
 
 LEARNING_RATE = 0.001
 loadPreviousModel = False 
@@ -37,12 +38,13 @@ print("Connecting to environment...")
 steeringThrottleEnv = CarEnv() 
 steeringThrottleBrakeEnv = CarEnvBrake()
 highwayEnv = HighwayEnvironment() 
+highwayNoBrakeEnv = HighwayEnvironmentNoBrakes() 
 
 if loadPreviousModel:
     timestepNumber = 0 
     # model = PPO.load(f"{modelsDirectory}/{timestepNumber}", device = "cuda")
 else:
-    model = PPO(config["policy_type"], highwayEnv, verbose = 1, learning_rate = LEARNING_RATE, tensorboard_log=f"runs/{run.id}", device = "cuda")
+    model = PPO(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, tensorboard_log=f"runs/{run.id}", device = "cuda")
 
 TIMESTEPS = 500_000 
 iters = 0 
