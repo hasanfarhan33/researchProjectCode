@@ -140,14 +140,15 @@ class HighwayEnvironment(gym.Env):
             self.vehicle.apply_control(carla.VehicleControl(throttle = float(throttle), steer = float(steer), brake = 0.0))
         elif brake == 1:
             self.vehicle.apply_control(carla.VehicleControl(throttle = float(throttle), steer = float(steer), brake = 0.3))
-        
-        # Printing steer, throttle and brake every 50 steps 
-        if self.step_counter % 50 == 0: 
-            print("Steer: ", steer, "Throttle: ", throttle, "Brake: ", brake)
             
         v = self.vehicle.get_velocity() 
         kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
         distance_travelled = self.initial_location.distance(self.vehicle.get_location())
+        
+        # Printing steer, throttle and brake every 50 steps 
+        if self.step_counter % 50 == 0: 
+            print("Steer: ", steer, "Throttle: ", throttle, "Brake: ", brake)
+            # print("Distance Travelled: ", distance_travelled, "Velocity: ", kmh)
         
         camera = self.frontCamera 
         

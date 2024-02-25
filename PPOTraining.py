@@ -32,6 +32,8 @@ run = wandb.init(
     sync_tensorboard=True, 
 )
 
+# run = wandb.init(project = "Carla_Research_Project", id = "ln4bk548", config = config, sync_tensorboard= True, resume = "must")
+
     
 print("Connecting to environment...")
 

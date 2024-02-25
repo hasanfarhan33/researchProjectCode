@@ -4,6 +4,7 @@ import random
 import numpy as np 
 import cv2 
 import math
+import time
 
 actorList = [] 
 models = ["dodge", "audi", "mini", "mustang", "nissan", "jeep"]
@@ -101,6 +102,9 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
         vehicle = world.try_spawn_actor(ego_vehicle, random.choice(spawn_points))
     else:
         vehicle = world.try_spawn_actor(ego_vehicle, spawn_points[spawn_index])
+        spawn_location = spawn_points[spawn_index].location
+        print("LOCATION OF THE SPAWN POINT: ", spawn_location)
+        
     
     if autonomy:
             vehicle.set_autopilot(True)
@@ -113,7 +117,7 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     if vehicle is not None: 
         actorList.append(vehicle)
         # return ego_vehicle
-        return vehicle
+        return vehicle, spawn_location
 
 try:
     client = carla.Client("localhost", 2000)
@@ -161,7 +165,7 @@ try:
     # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0))
     
     # SPAWNING EGO VEHICLE 
-    vehicle = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
+    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
 
 
     # vehicle_cam(blueprint_library, vehicle)
@@ -178,6 +182,9 @@ try:
         # velocity = vehicle.get_velocity()
         # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
         # print("The vehicle is moving at ", kmh, "km/h")
+        # print("Distance Travelled: ", distance_travelled)
+        # print("Vehicle Location: ", vehicle.get_location())
+        print("Distance Travelled: ", spawn_location.distance(vehicle.get_location()))
 
 finally:
     for actor in actorList: 
