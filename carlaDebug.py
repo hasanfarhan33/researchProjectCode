@@ -111,7 +111,7 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     else: 
         # Controlling the car manually  
         steerAmount = 0.25      
-        vehicle.apply_control(carla.VehicleControl(throttle = 0.15, brake = 0.0, steer = 0.0))
+        vehicle.apply_control(carla.VehicleControl(throttle = 0.5, brake = 0.0, steer = 0.0))
         # pass 
     
     if vehicle is not None: 
@@ -184,7 +184,14 @@ try:
         # print("The vehicle is moving at ", kmh, "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
-        print("Distance Travelled: ", spawn_location.distance(vehicle.get_location()))
+        distance_travelled = int(spawn_location.distance(vehicle.get_location()))
+        print("Distance Travelled: ", distance_travelled)
+        if distance_travelled == 100:
+            print("REACHED 100")
+        elif distance_travelled == 100 + 50: 
+            print("REACHED 150")
+            
+
 
 finally:
     for actor in actorList: 

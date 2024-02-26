@@ -7,7 +7,7 @@ from gymnasium import spaces
 import carla 
 import cv2 
 
-SECONDS_PER_EPISODE = 30 
+SECONDS_PER_EPISODE = 60 
 
 N_CHANNELS = 3 
 HEIGHT = 300 
@@ -30,7 +30,11 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         super(HighwayEnvironmentNoBrakes, self).__init__() 
         
         # 3 possible inputs for steering, 2 for throttle
-        self.action_space = spaces.MultiDiscrete([3, 2])
+        # self.action_space = spaces.MultiDiscrete([3, 2])
+        
+        # 3 possible inputs for steering (THROTTLE CONSTANT)
+        self.action_space = spaces.MultiDiscrete([3])
+        
         self.observation_space = spaces.Box(low = 0.0, high = 1.0, shape = (HEIGHT, WIDTH, N_CHANNELS), dtype = np.uint8)
         
         self.client = carla.Client("localhost", 2000)
@@ -72,6 +76,7 @@ class HighwayEnvironmentNoBrakes(gym.Env):
             
         self.actor_list.append(self.vehicle)
         self.initial_location = self.vehicle.get_location() 
+        self.spawn_location = self.spawn_points[self.spawn_index].location
         
         self.semantic_camera = self.blueprint_library.find("sensor.camera.semantic_segmentation")
         self.semantic_camera.set_attribute("image_size_x", f"{self.imageWidth}")
@@ -118,30 +123,40 @@ class HighwayEnvironmentNoBrakes(gym.Env):
     def step(self, action): 
         self.step_counter += 1
         steer = action[0] 
-        throttle = action[1] 
+        
+        # COMMENT THIS OUT IF YOU WANT TO KEEP THROTTLE CONSTANT
+        # throttle = action[1] 
+        THROTTLE = 0.5
         
         # Mapping steering actions
         if steer == 0:
-            steer = -0.1
+            steer = -0.05
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
         elif steer == 1: 
             steer = 0.0 
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
         elif steer == 2: 
-            steer = 0.1 
+            steer = 0.05 
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
+            
         
         # Mapping Throttle 
         #TODO: Find better values of throttle 
-        if throttle == 0: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
-        elif throttle == 1: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 1.0, steer = float(steer))) 
+        # if throttle == 0: 
+        #     self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
+        # elif throttle == 1: 
+        #     self.vehicle.apply_control(carla.VehicleControl(throttle = 0.75, steer = float(steer)))
+        
+        # Keep throttle constant
+         
             
         v = self.vehicle.get_velocity() 
         kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
-        distance_travelled = self.initial_location.distance(self.vehicle.get_location())
+        distance_travelled = self.spawn_location.distance(self.vehicle.get_location())
         
         # Printing steer, throttle and brake every 50 steps 
         if self.step_counter % 50 == 0: 
-            print("Steer: ", steer, "Throttle: ", throttle, "Distance: ", distance_travelled, "Velocity: ", kmh)
+            print("Steer: ", steer, "Distance: ", int(distance_travelled), "Velocity: ", kmh, "Throttle: ", THROTTLE)
           
         camera = self.frontCamera 
         
@@ -169,27 +184,28 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         # Punish for collision and lane invasion
         if len(self.collision_hist)!= 0 or len(self.lane_invasion_hist) != 0: 
             terminated = True 
-            reward = reward - 500 
+            reward = reward - 200 
             self.cleanup() 
             
         # Reward for making distance
-        EASY_DISTANCE = 100 
-        MEDIUM_DISTANCE = 200 
-        HARD_DISTANCE = 300  
-        if distance_travelled < 30: 
+        # TODO: FIGURE OUT BETTER DISTANCE REWARDS
+        EASY_DISTANCE = 50 
+        MEDIUM_DISTANCE = 100 
+        HARD_DISTANCE = 200
+        if int(distance_travelled) < 10: 
+            reward = reward - 1
+        elif int(distance_travelled) < 30: 
             reward = reward - 1 
-        elif distance_travelled < 50: 
-            reward = reward + 1 
-        elif distance_travelled < 100: 
-            reward = reward + 10
-        elif distance_travelled >= EASY_DISTANCE: 
-            reward = reward + 50 
+        elif int(distance_travelled) >= EASY_DISTANCE and int(distance_travelled) < MEDIUM_DISTANCE: 
+            reward = reward + 2 
             print("The vehicle reached EASY DISTANCE")
-        elif distance_travelled >= MEDIUM_DISTANCE: 
-            reward = reward + 100
+        # elif distance_travelled == EASY_DISTANCE + 25: 
+        #     reward = reward + 60
+        elif int(distance_travelled) >= MEDIUM_DISTANCE and int(distance_travelled) < HARD_DISTANCE: 
+            reward = reward + 5
             print("The vehicle reached MEDIUM DISTANCE") 
-        elif distance_travelled >= HARD_DISTANCE: 
-            reward = reward + 200
+        elif int(distance_travelled) >= HARD_DISTANCE: 
+            reward = reward + 10
             print("The vehicle reached HARD DISTANCE")
             
         # Check for episode duration 
