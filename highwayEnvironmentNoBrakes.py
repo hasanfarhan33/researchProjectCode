@@ -7,7 +7,7 @@ from gymnasium import spaces
 import carla 
 import cv2 
 
-SECONDS_PER_EPISODE = 60 
+SECONDS_PER_EPISODE = 30 
 
 N_CHANNELS = 3 
 HEIGHT = 300 
@@ -128,16 +128,33 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         # throttle = action[1] 
         THROTTLE = 0.5
         
+        # ACKERMANN SPEEDS
+        EASY_SPEED = 5.55556 # 20 kph 
+        MEDIUM_SPEED= 11.1111 # 40 kph
+        HARD_SPEED = 22.2222 # 80 kph
+        
+        # MAPPING VEHICLECONTROL
         # Mapping steering actions
         if steer == 0:
-            steer = -0.05
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
+            steer = -0.025
+            self.vehicle.apply_control(carla.VehicleControl(throttle = THROTTLE, steer = float(steer)))
         elif steer == 1: 
             steer = 0.0 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = THROTTLE, steer = float(steer)))
         elif steer == 2: 
-            steer = 0.05 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
+            steer = 0.025
+            self.vehicle.apply_control(carla.VehicleControl(throttle = THROTTLE, steer = float(steer)))
+            
+        # Mapping VEHICLEACKERMANNCONTROL 
+        # if steer == 0: 
+        #     steer = -0.0436332
+        #     self.vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = 11.1111, acceleration = 2.682, steer = float(steer)))
+        # elif steer == 1: 
+        #     steer = 0
+        #     self.vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = 11.1111, acceleration = 2.682, steer = float(steer)))
+        # elif steer == 2: 
+        #     steer = 0.0436332
+        #     self.vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = 11.1111, acceleration = 2.682, steer = float(steer)))
             
         
         # Mapping Throttle 
@@ -156,8 +173,8 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         
         # Printing steer, throttle and brake every 50 steps 
         if self.step_counter % 50 == 0: 
-            print("Steer: ", steer, "Distance: ", int(distance_travelled), "Velocity: ", kmh, "Throttle: ", THROTTLE)
-          
+            print("Steer: ", steer, "Distance: ", int(distance_travelled), "Velocity: ", kmh, "Throttle: ", THROTTLE)          
+            # print("Steer: ", steer, "Distance: ", int(distance_travelled), "Velocity: ", kmh)          
         camera = self.frontCamera 
         
         if self.SHOW_CAM: 

@@ -7,6 +7,7 @@ import time
 import wandb
 from wandb.integration.sb3 import WandbCallback
 import gymnasium as gym 
+from highwayEnvironmentNoBrakes import HighwayEnvironmentNoBrakes
 
 LEARNING_RATE = 0.001
 loadPreviousModel = False 
@@ -15,7 +16,15 @@ config = {
     "policy_type":"MlpPolicy", 
 }
 
-run = wandb.init(project = "Carla_Research_Project", id = "ln4bk548", config = config, sync_tensorboard= True, resume = "must")
+# IF creating a new model 
+run = wandb.init(
+    project = "Carla_Research_Project", 
+    config = config, 
+    sync_tensorboard=True, 
+)
+
+# IF loading a new model 
+# run = wandb.init(project = "Carla_Research_Project", id = "ln4bk548", config = config, sync_tensorboard= True, resume = "must")
 
 if wandb.run.resumed: 
     loadPreviousModel = True 
@@ -29,6 +38,7 @@ steeringThrottleEnv = CarEnv()
 # steeringThrottleEnv = gym.make("stCarEnv")
 steeringThrottleBrakeEnv = CarEnvBrake() 
 # steeringThrottleBrakeEnv = gym.make("stbCarEnv")
+highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
 
 if loadPreviousModel:
     # TODO: Figure out how to load previously trained models 
@@ -36,7 +46,7 @@ if loadPreviousModel:
     # model = PPO.load(f"{modelsDirectory}/{timestepNumber}", device = "cuda", env)
     model = A2C.load("./models/ln4bk548/model.zip", env = steeringThrottleBrakeEnv)
 else:
-    model = A2C(config["policy_type"], CarEnvBrake, verbose = 1, learning_rate = LEARNING_RATE, tensorboard_log=f"runs/{run.id}", device = "cuda")
+    model = A2C(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, tensorboard_log=f"runs/{run.id}", device = "cuda")
 
 TIMESTEPS = 500_000 
 iters = 0 

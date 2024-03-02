@@ -5,6 +5,7 @@ import numpy as np
 import cv2 
 import math
 import time
+from carla import command
 
 actorList = [] 
 models = ["dodge", "audi", "mini", "mustang", "nissan", "jeep"]
@@ -110,8 +111,10 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
             vehicle.set_autopilot(True)
     else: 
         # Controlling the car manually  
-        steerAmount = 0.25      
-        vehicle.apply_control(carla.VehicleControl(throttle = 0.5, brake = 0.0, steer = 0.0))
+        steerAmount = 0.01     
+        # vehicle.apply_control(carla.VehicleControl(throttle = 0.2))
+        vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = float(2.77778), steer = float(-0.0436332)))
+        # command.ApplyTargetVelocity(vehicle, float(1.38889))
         # pass 
     
     if vehicle is not None: 
@@ -151,7 +154,7 @@ try:
     # print(len(spawn_points))
         
     # Checking all the spawn points 
-    # visualize_spawn_points(spawn_points)
+    visualize_spawn_points(spawn_points)
         
     # Spawning single vehicle
     # merc_car = blueprint_library.filter("vehicle.mercedes.coupe_2020")[0]
@@ -165,7 +168,7 @@ try:
     # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0))
     
     # SPAWNING EGO VEHICLE 
-    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
+    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 330)
 
 
     # vehicle_cam(blueprint_library, vehicle)
@@ -179,13 +182,13 @@ try:
     while True:
         world.tick()
         # Printing speed of the vehicle 
-        # velocity = vehicle.get_velocity()
-        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        # print("The vehicle is moving at ", kmh, "km/h")
+        velocity = vehicle.get_velocity()
+        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        print("The vehicle is moving at ", int(kmh), "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
         distance_travelled = int(spawn_location.distance(vehicle.get_location()))
-        print("Distance Travelled: ", distance_travelled)
+        # print("Distance Travelled: ", distance_travelled)
         if distance_travelled == 100:
             print("REACHED 100")
         elif distance_travelled == 100 + 50: 

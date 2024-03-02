@@ -10,7 +10,7 @@ from highwayEnvironment import HighwayEnvironment
 from highwayEnvironmentNoBrakes import HighwayEnvironmentNoBrakes
 
 LEARNING_RATE = 0.001
-loadPreviousModel = False 
+loadPreviousModel = True 
 
 # modelName = "Jimothy"
 # modelsDirectory = f"models/{modelName}"
@@ -26,13 +26,14 @@ config = {
     "policy_type":"MlpPolicy", 
 }
 
-run = wandb.init(
-    project = "Carla_Research_Project", 
-    config = config, 
-    sync_tensorboard=True, 
-)
+# run = wandb.init(
+#     project = "Carla_Research_Project", 
+#     config = config, 
+#     sync_tensorboard=True, 
+# )
 
-# run = wandb.init(project = "Carla_Research_Project", id = "ln4bk548", config = config, sync_tensorboard= True, resume = "must")
+# If loading a previous model 
+run = wandb.init(project = "Carla_Research_Project", id = "axvc03ns", config = config, sync_tensorboard= True, resume = "must")
 
     
 print("Connecting to environment...")
@@ -44,9 +45,10 @@ highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
 
 if loadPreviousModel:
     timestepNumber = 0 
-    # model = PPO.load(f"{modelsDirectory}/{timestepNumber}", device = "cuda")
+    model = PPO.load("./models/axvc03ns/model.zip", device = "cuda")
 else:
-    model = PPO(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, tensorboard_log=f"runs/{run.id}", device = "cuda")
+    model = PPO(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, 
+                tensorboard_log=f"runs/{run.id}", device = "cuda")
 
 TIMESTEPS = 500_000 
 iters = 0 
@@ -54,7 +56,9 @@ iters = 0
 while iters < 2: 
     iters += 1 
     print("Iteration ", iters, " is to commence...")
-    model.learn(total_timesteps = TIMESTEPS, callback=WandbCallback(gradient_save_freq=100, model_save_path = f"models/{run.id}", model_save_freq=200, verbose = 2), reset_num_timesteps=False, log_interval = 4)
+    model.learn(total_timesteps = TIMESTEPS, 
+                callback=WandbCallback(gradient_save_freq=100, model_save_path = f"models/{run.id}", 
+                                       model_save_freq=200, verbose = 2), reset_num_timesteps=False, log_interval = 4)
     print("Iteration ", iters, " has been trained...")
 
 run.finish() 
