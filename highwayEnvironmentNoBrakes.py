@@ -199,10 +199,15 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         truncated = False 
         
         # Punish for collision and lane invasion
-        if len(self.collision_hist)!= 0 or len(self.lane_invasion_hist) != 0: 
+        # if len(self.collision_hist)!= 0 or len(self.lane_invasion_hist) != 0: 
+        #     terminated = True 
+        #     reward = reward - 200 
+        #     self.cleanup()
+        
+        if len(self.collision_hist) != 0: 
             terminated = True 
-            reward = reward - 200 
-            self.cleanup() 
+            reward = reward - 100
+            self.cleanup()  
             
         # Reward for making distance
         # TODO: FIGURE OUT BETTER DISTANCE REWARDS
@@ -214,15 +219,15 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         elif int(distance_travelled) < 30: 
             reward = reward - 1 
         elif int(distance_travelled) >= EASY_DISTANCE and int(distance_travelled) < MEDIUM_DISTANCE: 
-            reward = reward + 2 
+            reward = (reward + EASY_DISTANCE) // len(self.lane_invasion_hist)
             print("The vehicle reached EASY DISTANCE")
         # elif distance_travelled == EASY_DISTANCE + 25: 
         #     reward = reward + 60
         elif int(distance_travelled) >= MEDIUM_DISTANCE and int(distance_travelled) < HARD_DISTANCE: 
-            reward = reward + 5
+            reward = (reward + MEDIUM_DISTANCE) // len(self.lane_invasion_hist) 
             print("The vehicle reached MEDIUM DISTANCE") 
         elif int(distance_travelled) >= HARD_DISTANCE: 
-            reward = reward + 10
+            reward = (reward + HARD_DISTANCE) // len(self.lane_invasion_hist)
             print("The vehicle reached HARD DISTANCE")
             
         # Check for episode duration 

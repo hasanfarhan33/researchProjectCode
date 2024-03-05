@@ -45,7 +45,7 @@ highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load("./models/axvc03ns/model.zip", device = "cuda")
+    model = PPO.load("./models/axvc03ns/model.zip", device = "cuda", env = highwayNoBrakeEnv)
 else:
     model = PPO(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, 
                 tensorboard_log=f"runs/{run.id}", device = "cuda")
