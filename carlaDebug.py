@@ -49,6 +49,15 @@ def process_img(image, windowName):
     cv2.waitKey(1)
     return i3/255.0
 
+def semantic_process_img(image, windowName): 
+        image.convert(carla.ColorConverter.CityScapesPalette)
+        i = np.array(image.raw_data)
+        i = i.reshape((IM_HEIGHT, IM_WIDTH, 4))[:, :, :3] 
+        frontCamera = i 
+        
+        cv2.imshow(windowName, frontCamera)
+        cv2.waitKey(1)
+        
 def vehicle_cam(blueprint_lib, vehicle_id):
     camera_bp = blueprint_lib.find("sensor.camera.rgb")
     camera_bp.set_attribute("image_size_x", f"{IM_WIDTH}")
@@ -86,6 +95,17 @@ def heli_cam(blueprint_lib, vehicle_id):
     actorList.append(heli_sensor)
     
     heli_sensor.listen(lambda data: process_img(data, "Helicopter Camera"))
+
+def semantic_camera(blueprint_lib, vehicle_id): 
+    semantic_camera = blueprint_library.find("sensor.camera.semantic_segmentation")
+    semantic_camera.set_attribute("image_size_x", f"{IM_WIDTH}")
+    semantic_camera.set_attribute("image_size_y", f"{IM_HEIGHT}")
+    semantic_camera.set_attribute("fov", f"90")
+    
+    camera_init_trans = carla.Transform(carla.Location(z = 1.3, x= 1.4))
+    sensor = world.spawn_actor(semantic_camera, camera_init_trans, attach_to = vehicle_id)
+    actorList.append(sensor)
+    sensor.listen(lambda data: semantic_process_img(data, "Semantic Camera"))
     
 def printing_blueprint_lib(): 
     blueprints = [bp for bp in world.get_blueprint_library().filter("*")]
@@ -112,8 +132,8 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     else: 
         # Controlling the car manually  
         steerAmount = 0.01     
-        # vehicle.apply_control(carla.VehicleControl(throttle = 0.2))
-        vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = float(2.77778), steer = float(-0.0436332)))
+        vehicle.apply_control(carla.VehicleControl(throttle = 0))
+        # vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = float(2.77778), steer = float(-0.0436332)))
         # command.ApplyTargetVelocity(vehicle, float(1.38889))
         # pass 
     
@@ -172,8 +192,9 @@ try:
 
 
     # vehicle_cam(blueprint_library, vehicle)
-    heli_cam(blueprint_library, vehicle)
+    # heli_cam(blueprint_library, vehicle)
     add_lane_sensor(blueprint_library, vehicle)
+    # semantic_camera(blueprint_library, vehicle)
 
     # Spawning multiple vehicles 
     # spawn_traffic(models, 50)

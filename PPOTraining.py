@@ -33,7 +33,7 @@ config = {
 # )
 
 # If loading a previous model 
-run = wandb.init(project = "Carla_Research_Project", id = "axvc03ns", config = config, sync_tensorboard= True, resume = "must")
+run = wandb.init(project = "Carla_Research_Project", id = "hf9pquse", config = config, sync_tensorboard= True, resume = "must")
 
     
 print("Connecting to environment...")
@@ -45,7 +45,7 @@ highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load("./models/axvc03ns/model.zip", device = "cuda", env = highwayNoBrakeEnv)
+    model = PPO.load("./models/hf9pquse/model.zip", device = "cuda", env = highwayNoBrakeEnv)
 else:
     model = PPO(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, 
                 tensorboard_log=f"runs/{run.id}", device = "cuda")
