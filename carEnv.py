@@ -174,7 +174,7 @@ class CarEnv(gym.Env):
             
         # Mapping throttle 
         if throttle == 0: 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, steer = float(steer), brake = 1.0))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, steer = float(steer), brake = 0.0))
         elif throttle == 1: 
             self.vehicle.apply_control(carla.VehicleControl(throttle = 0.3, steer = float(steer), brake = 0.0))
         elif throttle == 2: 

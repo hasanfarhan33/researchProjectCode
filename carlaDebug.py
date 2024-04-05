@@ -83,6 +83,19 @@ def add_lane_sensor(blueprint_lib, vehicle_id):
 def lane_invasion_data(event): 
     print("The car crossed the lane: ", event)
 
+def add_collision_sensor(blueprint_lib, vehicle_id): 
+    # Adding a collision sensor to the vehicle 
+    colsensor = blueprint_lib.find("sensor.other.collision")
+    sensor_location = carla.Transform(carla.Location(z = 0, y = 0))
+    colsensor = world.spawn_actor(colsensor, sensor_location, attach_to = vehicle_id)
+    actorList.append(colsensor)
+    
+    colsensor.listen(lambda event: collision_data(event))
+    
+def collision_data(event):
+    actor_we_collide_against = event.other_actor.type_id
+    print(actor_we_collide_against)
+
 def heli_cam(blueprint_lib, vehicle_id):
     camera_bp = blueprint_lib.find("sensor.camera.rgb")
     camera_bp.set_attribute("image_size_x", f"{IM_WIDTH}")
@@ -131,8 +144,8 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
             vehicle.set_autopilot(True)
     else: 
         # Controlling the car manually  
-        steerAmount = 0.01     
-        vehicle.apply_control(carla.VehicleControl(throttle = 0))
+        steerAmount = 0.1     
+        vehicle.apply_control(carla.VehicleControl(throttle = 0.15))
         # vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = float(2.77778), steer = float(-0.0436332)))
         # command.ApplyTargetVelocity(vehicle, float(1.38889))
         # pass 
@@ -141,6 +154,20 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
         actorList.append(vehicle)
         # return ego_vehicle
         return vehicle, spawn_location
+        
+def spawn_pedestrian(): 
+    walker_bp = blueprint_library.find("walker.pedestrian.0001")
+    spawn_location = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+    pedestrian = world.try_spawn_actor(walker_bp, spawn_location)
+    print("THE PEDESTRIAN SHOULD BE SPAWNED")
+    
+
+def spawn_crash_vehicle(): 
+    vehicle_bp = blueprint_library.find("vehicle.mini.cooper_s_2021")
+    spawn_location = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+    crash_vehicle = world.try_spawn_actor(vehicle_bp, spawn_location)
+    print("CRASH VEHICLE SPAWNED")
+
 
 try:
     client = carla.Client("localhost", 2000)
@@ -188,13 +215,20 @@ try:
     # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0))
     
     # SPAWNING EGO VEHICLE 
-    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 330)
+    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 330)
+    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
 
+    # SPAWNING A PEDESTRIAN 
+    spawn_pedestrian()
+    
+    # SPAWNING A CRASH VEHICLE 
+    # spawn_crash_vehicle()
 
-    # vehicle_cam(blueprint_library, vehicle)
+    vehicle_cam(blueprint_library, vehicle)
     # heli_cam(blueprint_library, vehicle)
-    add_lane_sensor(blueprint_library, vehicle)
-    # semantic_camera(blueprint_library, vehicle)
+    # add_lane_sensor(blueprint_library, vehicle)
+    semantic_camera(blueprint_library, vehicle)
+    add_collision_sensor(blueprint_library, vehicle)
 
     # Spawning multiple vehicles 
     # spawn_traffic(models, 50)
@@ -203,21 +237,21 @@ try:
     while True:
         world.tick()
         # Printing speed of the vehicle 
-        velocity = vehicle.get_velocity()
-        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        print("The vehicle is moving at ", int(kmh), "km/h")
+        # velocity = vehicle.get_velocity()
+        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        # print("The vehicle is moving at ", int(kmh), "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
-        distance_travelled = int(spawn_location.distance(vehicle.get_location()))
+        # distance_travelled = int(spawn_location.distance(vehicle.get_location()))
         # print("Distance Travelled: ", distance_travelled)
-        if distance_travelled == 100:
-            print("REACHED 100")
-        elif distance_travelled == 100 + 50: 
-            print("REACHED 150")
+        # if distance_travelled == 100:
+        #     print("REACHED 100")
+        # elif distance_travelled == 100 + 50: 
+        #     print("REACHED 150")
             
 
 
 finally:
     for actor in actorList: 
-        actor.destroy()
+        actor.destroy()  
     print("Removed all the actors!")
