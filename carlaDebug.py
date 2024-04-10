@@ -13,6 +13,11 @@ IM_WIDTH = 200
 IM_HEIGHT = 200
 FPS = 10
 
+
+FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
+THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -290.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
+
 def add_lidar(blueprint_lib, vehicle_id):
     lidar_bp = blueprint_lib.find("sensor.lidar.ray_cast")
     lidar_bp.set_attribute("channels", str(32))
@@ -39,7 +44,7 @@ def manage_traffic(synchronous_mode = True, seed = 0):
     traffic_manager.set_synchronous_mode(synchronous_mode)
     traffic_manager.set_random_device_seed(seed)
     random.seed(seed)
-
+    
 # Processing image from camera sensor 
 def process_img(image, windowName):
     i = np.array(image.raw_data)
@@ -148,7 +153,7 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     else: 
         # Controlling the car manually  
         steerAmount = 0.1     
-        vehicle.apply_control(carla.VehicleControl(throttle = 0.15))
+        vehicle.apply_control(carla.VehicleControl(throttle = 0))
         # vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = float(2.77778), steer = float(-0.0436332)))
         # command.ApplyTargetVelocity(vehicle, float(1.38889))
         # pass 
@@ -158,12 +163,17 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
         # return ego_vehicle
         return vehicle, spawn_location
         
-def spawn_pedestrian(): 
-    walker_bp = blueprint_library.find("walker.pedestrian.0001")
-    spawn_location = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+def spawn_pedestrian(location, pedestrian_id): 
+    walker_bp = blueprint_library.find(pedestrian_id)
+    spawn_location = location
     pedestrian = world.try_spawn_actor(walker_bp, spawn_location)
-    print("THE PEDESTRIAN SHOULD BE SPAWNED")
-    return pedestrian 
+    if pedestrian is not None: 
+        actorList.append(pedestrian)
+        print("THE PEDESTRIAN SHOULD BE SPAWNED")
+        return pedestrian 
+    else: 
+        print("THE PEDESTRIAN WAS NOT ADDED FOR SOME REASON")
+        return None 
     
 
 def spawn_crash_vehicle(): 
@@ -202,10 +212,12 @@ try:
 
     # Spawning a vehicle 
     spawn_points = world.get_map().get_spawn_points()
+    # spawn_point_location = spawn_points[351].location
+    # print(spawn_point_location)
     # print(len(spawn_points))
         
     # Checking all the spawn points 
-    visualize_spawn_points(spawn_points)
+    # visualize_spawn_points(spawn_points)
         
     # Spawning single vehicle
     # merc_car = blueprint_library.filter("vehicle.mercedes.coupe_2020")[0]
@@ -223,7 +235,14 @@ try:
     vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
 
     # SPAWNING A PEDESTRIAN 
-    pedestrian = spawn_pedestrian()
+    firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0001")
+    secondPedestrian = spawn_pedestrian(SECOND_PED_LOCATION, "walker.pedestrian.0016")
+    thirdPedestrian = spawn_pedestrian(THIRD_PED_LOCATION, "walker.pedestrian.0002")
+    
+    if firstPedestrian and secondPedestrian and thirdPedestrian is not None: 
+        print("Pedestrians Spawned Successfully!")
+    else: 
+        print("PEDESTRIAN SPAWN ERROR!")
     
     # SPAWNING A CRASH VEHICLE 
     # spawn_crash_vehicle()
@@ -255,9 +274,12 @@ try:
         
         # Printing the location of the pedestrian 
         vehicle_location = vehicle.get_location() 
-        ped_location = pedestrian.get_location() 
-        ped_vehicle_distance = int(vehicle_location.distance(ped_location))
-        print("DISTANCE BETWEEN CAR AND MAN: ", ped_vehicle_distance)
+        first_ped_location = firstPedestrian.get_location() 
+        # print("The location of the first pedestrian: ", first_ped_location)
+        first_ped_vehicle_distance = int(vehicle_location.distance(first_ped_location))
+        # print("DISTANCE BETWEEN CAR AND MAN: ", first_ped_vehicle_distance)
+        
+        
             
 
 
