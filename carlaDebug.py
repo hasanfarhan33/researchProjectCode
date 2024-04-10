@@ -94,7 +94,10 @@ def add_collision_sensor(blueprint_lib, vehicle_id):
     
 def collision_data(event):
     actor_we_collide_against = event.other_actor.type_id
-    print(actor_we_collide_against)
+    if "pedestrian" in actor_we_collide_against: 
+        print("COLLIED WITH A PEDESTRIAN! HE DEAD ~~")
+    else: 
+        print("Collided with something else!")
 
 def heli_cam(blueprint_lib, vehicle_id):
     camera_bp = blueprint_lib.find("sensor.camera.rgb")
@@ -160,6 +163,7 @@ def spawn_pedestrian():
     spawn_location = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
     pedestrian = world.try_spawn_actor(walker_bp, spawn_location)
     print("THE PEDESTRIAN SHOULD BE SPAWNED")
+    return pedestrian 
     
 
 def spawn_crash_vehicle(): 
@@ -219,7 +223,7 @@ try:
     vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
 
     # SPAWNING A PEDESTRIAN 
-    spawn_pedestrian()
+    pedestrian = spawn_pedestrian()
     
     # SPAWNING A CRASH VEHICLE 
     # spawn_crash_vehicle()
@@ -248,6 +252,12 @@ try:
         #     print("REACHED 100")
         # elif distance_travelled == 100 + 50: 
         #     print("REACHED 150")
+        
+        # Printing the location of the pedestrian 
+        vehicle_location = vehicle.get_location() 
+        ped_location = pedestrian.get_location() 
+        ped_vehicle_distance = int(vehicle_location.distance(ped_location))
+        print("DISTANCE BETWEEN CAR AND MAN: ", ped_vehicle_distance)
             
 
 
