@@ -16,7 +16,8 @@ FPS = 10
 
 FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
 SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
-THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -290.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
+THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
+FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
 
 def add_lidar(blueprint_lib, vehicle_id):
     lidar_bp = blueprint_lib.find("sensor.lidar.ray_cast")
@@ -235,9 +236,10 @@ try:
     vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
 
     # SPAWNING A PEDESTRIAN 
-    firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0001")
-    secondPedestrian = spawn_pedestrian(SECOND_PED_LOCATION, "walker.pedestrian.0016")
+    firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0030")
+    secondPedestrian = spawn_pedestrian(SECOND_PED_LOCATION, "walker.pedestrian.0032")
     thirdPedestrian = spawn_pedestrian(THIRD_PED_LOCATION, "walker.pedestrian.0002")
+    fourthPedestrian = spawn_pedestrian(FOURTH_PED_LOCATION, "walker.pedestrian.0034")
     
     if firstPedestrian and secondPedestrian and thirdPedestrian is not None: 
         print("Pedestrians Spawned Successfully!")
@@ -275,9 +277,19 @@ try:
         # Printing the location of the pedestrian 
         vehicle_location = vehicle.get_location() 
         first_ped_location = firstPedestrian.get_location() 
-        # print("The location of the first pedestrian: ", first_ped_location)
+        second_ped_location = secondPedestrian.get_location()
+        third_ped_location = thirdPedestrian.get_location() 
+        fourth_ped_location = fourthPedestrian.get_location()
+        
         first_ped_vehicle_distance = int(vehicle_location.distance(first_ped_location))
-        # print("DISTANCE BETWEEN CAR AND MAN: ", first_ped_vehicle_distance)
+        second_ped_vehicle_distance = int(vehicle_location.distance(second_ped_location))
+        third_ped_vehicle_distance = int(vehicle_location.distance(third_ped_location))
+        fourth_ped_vehicle_distance = int(vehicle_location.distance(fourth_ped_location))
+        
+        print("\nFIRST PED DISTANCE: ", first_ped_vehicle_distance)
+        print("SECOND PED DISTANCE: ", second_ped_vehicle_distance)
+        print("THIRD PED DISTANCE: ", third_ped_vehicle_distance)
+        print("FOURTH PED DISTANCE: ", fourth_ped_vehicle_distance, "\n")
         
         
             
