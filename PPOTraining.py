@@ -9,9 +9,10 @@ from carEnvBrake import CarEnvBrake
 from highwayEnvironment import HighwayEnvironment
 from highwayEnvironmentNoBrakes import HighwayEnvironmentNoBrakes
 from highwayEnvPedestrian import HighwayEnvPedestrian
+from highwayEnvMultiPedestrian import HighwayEnvMultiPedestrian
 
 LEARNING_RATE = 0.001
-loadPreviousModel = False
+loadPreviousModel = True
 
 # modelName = "Jimothy"
 # modelsDirectory = f"models/{modelName}"
@@ -27,14 +28,15 @@ config = {
     "policy_type":"MlpPolicy", 
 }
 
-run = wandb.init(
-    project = "Carla_Research_Project", 
-    config = config, 
-    sync_tensorboard=True, 
-)
+# IF TRAINING A NEW MODEL 
+# run = wandb.init(
+#     project = "Carla_Research_Project", 
+#     config = config, 
+#     sync_tensorboard=True, 
+# )
 
 # If loading a previous model 
-# run = wandb.init(project = "Carla_Research_Project", id = "hf9pquse", config = config, sync_tensorboard= True, resume = "must")
+run = wandb.init(project = "Carla_Research_Project", id = "mun59ysf", config = config, sync_tensorboard= True, resume = "must")
 
     
 print("Connecting to environment...")
@@ -43,12 +45,12 @@ print("Connecting to environment...")
 # steeringThrottleBrakeEnv = CarEnvBrake()
 # highwayEnv = HighwayEnvironment() 
 # highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
-
 pedestrianEnv = HighwayEnvPedestrian() 
+# highwayMultiPedEnv = HighwayEnvMultiPedestrian() 
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load("./models/hf9pquse/model.zip", device = "cuda", env = pedestrianEnv)
+    model = PPO.load("./models/mun59ysf/model.zip", device = "cuda", env = pedestrianEnv)
 else:
     model = PPO(config["policy_type"], pedestrianEnv, verbose = 1, learning_rate = LEARNING_RATE, 
                 tensorboard_log=f"runs/{run.id}", device = "cuda")

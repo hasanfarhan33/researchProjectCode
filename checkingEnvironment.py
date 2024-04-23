@@ -4,7 +4,7 @@ from highwayEnvMultiPedestrian import HighwayEnvMultiPedestrian
 from highwayEnvPedestrian import HighwayEnvPedestrian
 
 # env = CarEnv()
-env = HighwayEnvMultiPedestrian()
+env = HighwayEnvPedestrian()
 episodes = 50
 
 for episode in range(episodes):
