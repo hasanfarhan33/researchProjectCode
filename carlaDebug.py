@@ -14,10 +14,13 @@ IM_HEIGHT = 200
 FPS = 10
 
 
-FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
-SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
-THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
-FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
+# FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+# SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
+# THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
+# FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
+
+FLAG_LOCATION = carla.Location(x = -300.865570, y=33.573753, z=0.281942)
+flagCollected = False
 
 def add_lidar(blueprint_lib, vehicle_id):
     lidar_bp = blueprint_lib.find("sensor.lidar.ray_cast")
@@ -153,16 +156,48 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
             vehicle.set_autopilot(True)
     else: 
         # Controlling the car manually  
-        steerAmount = 0.1     
-        vehicle.apply_control(carla.VehicleControl(throttle = 0))
+        # steerAmount = 0.1 
+        
+        # vehicle_location = vehicle.get_location()
+        # distance_from_flag = vehicle_location.distance(FLAG_LOCATION)
+        # distance_from_spawn = vehicle_location.distance(spawn_location)
+        
+        # if distance_from_flag == 0: 
+        #     flagCollected = True 
+        # elif distance_from_spawn == 0 and flagCollected == True: 
+        #     print("FINISHED SCENARIO")
+            
+            
+        # if not flagCollected:     
+        #     vehicle.apply_control(carla.VehicleControl(throttle = 0.3, reverse = False))
+        # elif flagCollected: 
+        #     print("You are here!")
+        #     vehicle.apply_control(carla.VehicleControl(throttle = 0.3, reverse = True))
+        # elif flagCollected: 
+        #     vehicle.apply_control(carla.VehicleControl(throttle = 0.3, reverse = True))
+        # elif flagCollected and distance_from_spawn == 0: 
+        #     vehicle.apply_control(carla.VehicleControl(throttle = 0, brake = 1.0))
         # vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = float(2.77778), steer = float(-0.0436332)))
         # command.ApplyTargetVelocity(vehicle, float(1.38889))
-        # pass 
+        pass 
     
     if vehicle is not None: 
         actorList.append(vehicle)
         # return ego_vehicle
         return vehicle, spawn_location
+    
+def control_vehicle(vehicle, flag, spawn_loc): 
+    vehicle_location = vehicle.get_location()
+    distance_from_flag = vehicle_location.distance(FLAG_LOCATION)
+    distance_from_spawn = vehicle_location.distance(spawn_loc)
+    reverseBool = False
+    
+    if distance_from_flag == 0: 
+        reverseBool = True 
+        flag = True
+        vehicle.apply_control(carla.VehicleControl(throttle = 0.3, reverse = reverseBool)) 
+    elif distance_from_spawn == 0 and flagCollected == True: 
+        vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 1.0, reverse = False, handbrake = True))
         
 def spawn_pedestrian(location, pedestrian_id): 
     walker_bp = blueprint_library.find(pedestrian_id)
@@ -236,15 +271,15 @@ try:
     vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
 
     # SPAWNING A PEDESTRIAN 
-    firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0030")
-    secondPedestrian = spawn_pedestrian(SECOND_PED_LOCATION, "walker.pedestrian.0032")
-    thirdPedestrian = spawn_pedestrian(THIRD_PED_LOCATION, "walker.pedestrian.0002")
-    fourthPedestrian = spawn_pedestrian(FOURTH_PED_LOCATION, "walker.pedestrian.0034")
+    # firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0030")
+    # secondPedestrian = spawn_pedestrian(SECOND_PED_LOCATION, "walker.pedestrian.0032")
+    # thirdPedestrian = spawn_pedestrian(THIRD_PED_LOCATION, "walker.pedestrian.0002")
+    # fourthPedestrian = spawn_pedestrian(FOURTH_PED_LOCATION, "walker.pedestrian.0034")
     
-    if firstPedestrian and secondPedestrian and thirdPedestrian is not None: 
-        print("Pedestrians Spawned Successfully!")
-    else: 
-        print("PEDESTRIAN SPAWN ERROR!")
+    # if firstPedestrian and secondPedestrian and thirdPedestrian is not None: 
+    #     print("Pedestrians Spawned Successfully!")
+    # else: 
+    #     print("PEDESTRIAN SPAWN ERROR!")
     
     # SPAWNING A CRASH VEHICLE 
     # spawn_crash_vehicle()
@@ -276,20 +311,32 @@ try:
         
         # Printing the location of the pedestrian 
         vehicle_location = vehicle.get_location() 
-        first_ped_location = firstPedestrian.get_location() 
-        second_ped_location = secondPedestrian.get_location()
-        third_ped_location = thirdPedestrian.get_location() 
-        fourth_ped_location = fourthPedestrian.get_location()
         
-        first_ped_vehicle_distance = int(vehicle_location.distance(first_ped_location))
-        second_ped_vehicle_distance = int(vehicle_location.distance(second_ped_location))
-        third_ped_vehicle_distance = int(vehicle_location.distance(third_ped_location))
-        fourth_ped_vehicle_distance = int(vehicle_location.distance(fourth_ped_location))
+        distance_from_flag = int(vehicle_location.distance(FLAG_LOCATION))
+        distance_from_spawn = int(vehicle_location.distance(spawn_location))
+        distance_between_fs = int(spawn_location.distance(FLAG_LOCATION))
         
-        print("\nFIRST PED DISTANCE: ", first_ped_vehicle_distance)
-        print("SECOND PED DISTANCE: ", second_ped_vehicle_distance)
-        print("THIRD PED DISTANCE: ", third_ped_vehicle_distance)
-        print("FOURTH PED DISTANCE: ", fourth_ped_vehicle_distance, "\n")
+        # first_ped_location = firstPedestrian.get_location() 
+        # second_ped_location = secondPedestrian.get_location()
+        # third_ped_location = thirdPedestrian.get_location() 
+        # fourth_ped_location = fourthPedestrian.get_location()
+        
+        # first_ped_vehicle_distance = int(vehicle_location.distance(first_ped_location))
+        # second_ped_vehicle_distance = int(vehicle_location.distance(second_ped_location))
+        # third_ped_vehicle_distance = int(vehicle_location.distance(third_ped_location))
+        # fourth_ped_vehicle_distance = int(vehicle_location.distance(fourth_ped_location))
+        
+        # print("\nFIRST PED DISTANCE: ", first_ped_vehicle_distance)op
+        # print("SECOND PED DISTANCE: ", second_ped_vehicle_distance)
+        # print("THIRD PED DISTANCE: ", third_ped_vehicle_distance)
+        # print("FOURTH PED DISTANCE: ", fourth_ped_vehicle_distance, "\n")
+        
+        # print("\nVEHICLE LOCATION: ", vehicle_location)   
+        print("\nDISTANCE FROM FLAG:", distance_from_flag)     
+        print("DISTANCE FROM SPAWN:", distance_from_spawn)
+        print("DISTANCE BETWEEN SPAWN AND FLAG:", distance_between_fs, "\n")
+        
+        # control_vehicle(vehicle, flagCollected, spawn_location)
         
         
             
