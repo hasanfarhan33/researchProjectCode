@@ -57,6 +57,7 @@ class HighwayFlagEnv(gym.Env):
     def reset(self, seed = None): 
         self.collision_hist = [] 
         self.actor_list = [] 
+        self.lane_invasion_hist = [] 
         truncated = False 
         
         self.spawn_index = 350 
@@ -100,6 +101,12 @@ class HighwayFlagEnv(gym.Env):
         self.colsensor.listen(lambda event: self.collision_data(event))
         
         # TODO: SHOULD I ADD A LANE INVASION SENSOR? 
+        # lane_sensor = self.blueprint_library.find("sensor.other.lane_invasion")
+        # lane_trans = carla.Transform(carla.Location(z = 0, x = 0, y = 0))
+        # self.lane_sensor = self.world.try_spawn_actor(lane_sensor, lane_trans, attach_to = self.vehicle)
+        # self.lane_sensor.listen(lambda event: self.lane_invasion_data(event))
+        
+        
         
         while self.frontCamera is None: 
             time.sleep(0.01)
@@ -108,6 +115,9 @@ class HighwayFlagEnv(gym.Env):
         self.flag_collected = False 
         self.step_counter = 0 
         self.vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 0.0))
+        
+        info = {} 
+        return self.frontCamera / 255.0, info 
         
     def step(self, action): 
         self.step_counter += 1 
@@ -118,7 +128,7 @@ class HighwayFlagEnv(gym.Env):
         reverse = action
         
         
-        THROTTLE = 1.0 
+        THROTTLE = 0.5
         
         # Mapping VEHICLE CONTROL 
         if reverse == 0: 
@@ -126,13 +136,14 @@ class HighwayFlagEnv(gym.Env):
         elif reverse == 1: 
             self.vehicle.apply_control(carla.VehicleControl(throttle = THROTTLE, reverse = True))
 
-        v = self.vehicle.get_velocity() 
+        v = self.vehicle.get_velocity() # Getting the velocity of the vehicle 
         kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
         distance_travelled = self.spawn_location.distance(self.vehicle.get_location())
         
         # Printing throttle and reverse every 100 steps 
         if self.step_counter % 100 == 0: 
-            print("Distance:", int(distance_travelled), "Velocity:", kmh, "Throttle:", THROTTLE, "Reverse: ", reverse, "Flag collected:", self.flag_collected)
+            print("Distance:", int(distance_travelled), "Velocity:", kmh, "Throttle:", THROTTLE, "Reverse: ", reverse, "Flag collected:", self.flag_collected, 
+                  "\nDistance from SPAWN:", int(self.distance_from_spawn), "Distance from FLAG:", int(self.distance_from_flag))
             
         camera = self.frontCamera 
         
@@ -145,11 +156,22 @@ class HighwayFlagEnv(gym.Env):
         terminated = False 
         truncated = False 
         
-        # Punishing for colliding 
+        # Punishing for being too slow 
+        if kmh < 10: 
+            reward -= 1 
+        elif kmh > 10:
+            reward += 1
+        elif kmh > 20: 
+            reward += 2
+        
+        # Punishing for colliding and lane invasion
         if len(self.collision_hist) != 0: 
             terminated = True 
             reward = reward - 100 
             self.cleanup() 
+        
+        if self.distance_from_flag >= 0 and self.distance_from_spawn > 65: 
+            self.flag_collected = True 
         
         # IF THE FLAG IS NOT COLLECTED    
         if not self.flag_collected: 
@@ -170,19 +192,22 @@ class HighwayFlagEnv(gym.Env):
                 reward += 100 
         
         # IF THE FLAG IS CONNECTED 
-        if self.flag_collected: 
+        elif self.flag_collected: 
             # Reward for getting closer to the spawn location 
             if self.distance_from_spawn < 65: 
-                reward += 1 
-            elif self.distance_from_spawn < int(65 / 2): 
                 reward += 2 
-            elif self.distance_from_spawn < 30: 
+            elif self.distance_from_spawn < int(65 / 2): 
                 reward += 3 
+            elif self.distance_from_spawn < 30: 
+                reward += 4 
             elif self.distance_from_spawn < 10: 
-                reward += 4
+                reward += 5
             elif self.distance_from_spawn == 0: 
                 reward += 200 
                 terminated = True 
+            # Punish for getting further from the spawn distance 
+            if self.distance_from_spawn >= 65: 
+                reward -= 5
                 
         # Check for episode duration 
         if self.episode_start + SECONDS_PER_EPISODE < time.time(): 
@@ -203,6 +228,8 @@ class HighwayFlagEnv(gym.Env):
         self.collision_hist.append(event)
         
     # TODO: THINK ABOUT LANE INVASION! DO YOU NEED IT? 
+    def lane_invasion_data(self, event): 
+        self.lane_invasion_hist.append(event)
     
     def seed(self, seed): 
         pass

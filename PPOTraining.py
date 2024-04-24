@@ -10,9 +10,10 @@ from highwayEnvironment import HighwayEnvironment
 from highwayEnvironmentNoBrakes import HighwayEnvironmentNoBrakes
 from highwayEnvPedestrian import HighwayEnvPedestrian
 from highwayEnvMultiPedestrian import HighwayEnvMultiPedestrian
+from highwayFlagEnv import HighwayFlagEnv
 
 LEARNING_RATE = 0.001
-loadPreviousModel = True
+loadPreviousModel = False
 
 # modelName = "Jimothy"
 # modelsDirectory = f"models/{modelName}"
@@ -28,31 +29,37 @@ config = {
     "policy_type":"MlpPolicy", 
 }
 
-# IF TRAINING A NEW MODEL 
-# run = wandb.init(
-#     project = "Carla_Research_Project", 
-#     config = config, 
-#     sync_tensorboard=True, 
-# )
+# IF TRAINING A NEW MODEL
+run = wandb.init(
+        project = "Carla_Research_Project", 
+        config = config, 
+        sync_tensorboard=True, 
+    )
 
-# If loading a previous model 
-run = wandb.init(project = "Carla_Research_Project", id = "mun59ysf", config = config, sync_tensorboard= True, resume = "must")
-
+# If you want to load a previous model 
+# run = wandb.init(project = "Carla_Research_Project", id = "mun59ysf", config = config, sync_tensorboard= True, resume = "must")
     
+
+if wandb.run.resumed: 
+    loadPreviousModel = True 
+else: 
+    loadPreviousModel = False 
+
 print("Connecting to environment...")
 
 # steeringThrottleEnv = CarEnv() 
 # steeringThrottleBrakeEnv = CarEnvBrake()
 # highwayEnv = HighwayEnvironment() 
 # highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
-pedestrianEnv = HighwayEnvPedestrian() 
-# highwayMultiPedEnv = HighwayEnvMultiPedestrian() 
+# pedestrianEnv = HighwayEnvPedestrian() 
+# highwayMultiPedEnv = HighwayEnvMultiPedestrian()
+flagEnvHighway = HighwayFlagEnv() 
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load("./models/mun59ysf/model.zip", device = "cuda", env = pedestrianEnv)
+    model = PPO.load("./models/mun59ysf/model.zip", device = "cuda", env = flagEnvHighway)
 else:
-    model = PPO(config["policy_type"], pedestrianEnv, verbose = 1, learning_rate = LEARNING_RATE, 
+    model = PPO(config["policy_type"], flagEnvHighway, verbose = 1, learning_rate = LEARNING_RATE, 
                 tensorboard_log=f"runs/{run.id}", device = "cuda")
 
 TIMESTEPS = 500_000 

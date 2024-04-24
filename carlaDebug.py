@@ -166,7 +166,8 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
         #     flagCollected = True 
         # elif distance_from_spawn == 0 and flagCollected == True: 
         #     print("FINISHED SCENARIO")
-            
+        
+        vehicle.apply_control(carla.VehicleControl(throttle = 1, reverse = True))    
             
         # if not flagCollected:     
         #     vehicle.apply_control(carla.VehicleControl(throttle = 0.3, reverse = False))
@@ -297,9 +298,9 @@ try:
     while True:
         world.tick()
         # Printing speed of the vehicle 
-        # velocity = vehicle.get_velocity()
-        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        # print("The vehicle is moving at ", int(kmh), "km/h")
+        velocity = vehicle.get_velocity()
+        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        print("The vehicle is moving at ", int(kmh), "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
         # distance_travelled = int(spawn_location.distance(vehicle.get_location()))
@@ -332,9 +333,9 @@ try:
         # print("FOURTH PED DISTANCE: ", fourth_ped_vehicle_distance, "\n")
         
         # print("\nVEHICLE LOCATION: ", vehicle_location)   
-        print("\nDISTANCE FROM FLAG:", distance_from_flag)     
-        print("DISTANCE FROM SPAWN:", distance_from_spawn)
-        print("DISTANCE BETWEEN SPAWN AND FLAG:", distance_between_fs, "\n")
+        # print("\nDISTANCE FROM FLAG:", distance_from_flag)     
+        # print("DISTANCE FROM SPAWN:", distance_from_spawn)
+        # print("DISTANCE BETWEEN SPAWN AND FLAG:", distance_between_fs, "\n")
         
         # control_vehicle(vehicle, flagCollected, spawn_location)
         
