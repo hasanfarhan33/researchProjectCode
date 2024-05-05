@@ -37,7 +37,7 @@ run = wandb.init(
     )
 
 # If you want to load a previous model 
-# run = wandb.init(project = "Carla_Research_Project", id = "mun59ysf", config = config, sync_tensorboard= True, resume = "must")
+# run = wandb.init(project = "Carla_Research_Project", id = "wtyjhdaz", config = config, sync_tensorboard= True, resume = "must")
     
 
 if wandb.run.resumed: 
@@ -57,7 +57,7 @@ flagEnvHighway = HighwayFlagEnv()
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load("./models/mun59ysf/model.zip", device = "cuda", env = flagEnvHighway)
+    model = PPO.load("./models/wtyjhdaz/model.zip", device = "cuda", env = flagEnvHighway)
 else:
     model = PPO(config["policy_type"], flagEnvHighway, verbose = 1, learning_rate = LEARNING_RATE, 
                 tensorboard_log=f"runs/{run.id}", device = "cuda")
@@ -65,7 +65,7 @@ else:
 TIMESTEPS = 500_000 
 iters = 0 
 
-while iters < 2: 
+while iters < 4: 
     iters += 1 
     print("Iteration ", iters, " is to commence...")
     model.learn(total_timesteps = TIMESTEPS, 

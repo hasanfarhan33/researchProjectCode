@@ -98,6 +98,7 @@ class HighwayFlagEnv(gym.Env):
         # Adding collision sensor 
         colsensor = self.blueprint_library.find("sensor.other.collision")
         self.colsensor = self.world.spawn_actor(colsensor, camera_init_trans, attach_to = self.vehicle)
+        self.actor_list.append(self.colsensor)
         self.colsensor.listen(lambda event: self.collision_data(event))
         
         # TODO: SHOULD I ADD A LANE INVASION SENSOR? 
@@ -164,13 +165,13 @@ class HighwayFlagEnv(gym.Env):
         elif kmh > 20: 
             reward += 2
         
-        # Punishing for colliding and lane invasion
+        # Punishing for colliding
         if len(self.collision_hist) != 0: 
             terminated = True 
             reward = reward - 100 
             self.cleanup() 
         
-        if self.distance_from_flag >= 0 and self.distance_from_spawn > 65: 
+        if self.distance_from_flag >= 0 and self.distance_from_spawn >= 65: 
             self.flag_collected = True 
         
         # IF THE FLAG IS NOT COLLECTED    
@@ -185,13 +186,13 @@ class HighwayFlagEnv(gym.Env):
             elif self.distance_from_flag < 10: 
                 reward += 4 
             # PUNISH HEAVILY FOR GETTING AWAY FROM THE FLAG 
-            elif self.distance_from_flag > 65: 
-                reward -= 5
+            elif self.distance_from_spawn > 65: 
+                reward -= 10
             elif self.distance_from_flag == 0: 
                 self.flag_collected = True 
                 reward += 100 
         
-        # IF THE FLAG IS CONNECTED 
+        # IF THE FLAG IS COLLECTED 
         elif self.flag_collected: 
             # Reward for getting closer to the spawn location 
             if self.distance_from_spawn < 65: 
@@ -206,8 +207,8 @@ class HighwayFlagEnv(gym.Env):
                 reward += 200 
                 terminated = True 
             # Punish for getting further from the spawn distance 
-            if self.distance_from_spawn >= 65: 
-                reward -= 5
+            if self.distance_from_flag >= 65 or self.distance_from_spawn > 65: 
+                reward -= 10
                 
         # Check for episode duration 
         if self.episode_start + SECONDS_PER_EPISODE < time.time(): 

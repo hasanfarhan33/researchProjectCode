@@ -19,6 +19,16 @@ FPS = 10
 # THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
 # FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
 
+# Choose a location at random 
+first_loc = carla.Transform(carla.Location(x = -325.865570, y=33.573753, z=2), carla.Rotation(yaw = 180))
+second_loc = carla.Transform(carla.Location(x = -325.865570, y = 30.573753, z = 2), carla.Rotation(yaw = 180))
+third_loc = carla.Transform(carla.Location(x = -325.865570, y = 36.573753, z = 2), carla.Rotation(yaw = 180))
+fourth_loc = carla.Transform(carla.Location(x = -325.865570, y = 26.573753, z = 2), carla.Rotation(yaw = 180))
+
+ped_locations = [first_loc, second_loc, third_loc, fourth_loc]
+
+spectator_location = carla.Transform(carla.Location(x=-365.865570, y=33.573753, z=10.0))
+
 FLAG_LOCATION = carla.Location(x = -300.865570, y=33.573753, z=0.281942)
 flagCollected = False
 
@@ -167,7 +177,7 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
         # elif distance_from_spawn == 0 and flagCollected == True: 
         #     print("FINISHED SCENARIO")
         
-        vehicle.apply_control(carla.VehicleControl(throttle = 1, reverse = True))    
+        vehicle.apply_control(carla.VehicleControl(throttle = 0, reverse = True))    
             
         # if not flagCollected:     
         #     vehicle.apply_control(carla.VehicleControl(throttle = 0.3, reverse = False))
@@ -213,6 +223,19 @@ def spawn_pedestrian(location, pedestrian_id):
         return None 
     
 
+def spawn_ped_random(location_arr, pedestrian_id): 
+    walker_bp = blueprint_library.find(pedestrian_id)
+    spawn_location = random.choice(ped_locations)
+    print(spawn_location)
+    pedestrian = world.try_spawn_actor(walker_bp, spawn_location)
+    if pedestrian is not None: 
+        actorList.append(pedestrian)
+        print("THE PEDESTRIAN SHOULD BE SPAWNED")
+        return pedestrian 
+    else: 
+        print("THE PEDESTRIAN HAS NOT BEEN SPAWNED FOR SOME REASON")
+        return None 
+
 def spawn_crash_vehicle(): 
     vehicle_bp = blueprint_library.find("vehicle.mini.cooper_s_2021")
     spawn_location = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
@@ -228,6 +251,9 @@ try:
 
     world = client.get_world() 
     world.set_weather(carla.WeatherParameters.ClearNoon)
+    
+    # Setting the location of the spectator 
+    world.get_spectator().set_transform(spectator_location)
     
     # Checking blueprint library 
     # printing_blueprint_lib()
@@ -277,6 +303,8 @@ try:
     # thirdPedestrian = spawn_pedestrian(THIRD_PED_LOCATION, "walker.pedestrian.0002")
     # fourthPedestrian = spawn_pedestrian(FOURTH_PED_LOCATION, "walker.pedestrian.0034")
     
+    random_ped = spawn_ped_random(ped_locations, "walker.pedestrian.0030")
+    
     # if firstPedestrian and secondPedestrian and thirdPedestrian is not None: 
     #     print("Pedestrians Spawned Successfully!")
     # else: 
@@ -300,7 +328,7 @@ try:
         # Printing speed of the vehicle 
         velocity = vehicle.get_velocity()
         kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        print("The vehicle is moving at ", int(kmh), "km/h")
+        # print("The vehicle is moving at ", int(kmh), "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
         # distance_travelled = int(spawn_location.distance(vehicle.get_location()))
