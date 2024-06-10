@@ -37,7 +37,7 @@ run = wandb.init(
     )
 
 # If you want to load a previous model 
-# run = wandb.init(project = "Carla_Research_Project", id = "wtyjhdaz", config = config, sync_tensorboard= True, resume = "must")
+# run = wandb.init(project = "Carla_Research_Project", id = "8jkd9iwh", config = config, sync_tensorboard= True, resume = "must")
     
 
 if wandb.run.resumed: 
@@ -50,23 +50,24 @@ print("Connecting to environment...")
 # steeringThrottleEnv = CarEnv() 
 # steeringThrottleBrakeEnv = CarEnvBrake()
 # highwayEnv = HighwayEnvironment() 
-# highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
+highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
 # pedestrianEnv = HighwayEnvPedestrian() 
 # highwayMultiPedEnv = HighwayEnvMultiPedestrian()
-flagEnvHighway = HighwayFlagEnv() 
+# flagEnvHighway = HighwayFlagEnv() 
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load("./models/wtyjhdaz/model.zip", device = "cuda", env = flagEnvHighway)
+    model = PPO.load("./models/8jkd9iwh/model.zip", device = "cuda", env = highwayNoBrakeEnv)
 else:
-    model = PPO(config["policy_type"], flagEnvHighway, verbose = 1, learning_rate = LEARNING_RATE, 
+    model = PPO(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, 
                 tensorboard_log=f"runs/{run.id}", device = "cuda")
 
 TIMESTEPS = 500_000 
 iters = 0 
 
-while iters < 4: 
+while iters < 2: 
     iters += 1 
+    print(loadPreviousModel)
     print("Iteration ", iters, " is to commence...")
     model.learn(total_timesteps = TIMESTEPS, 
                 callback=WandbCallback(gradient_save_freq=100, model_save_path = f"models/{run.id}", 

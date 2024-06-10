@@ -32,6 +32,13 @@ spectator_location = carla.Transform(carla.Location(x=-365.865570, y=33.573753, 
 FLAG_LOCATION = carla.Location(x = -300.865570, y=33.573753, z=0.281942)
 flagCollected = False
 
+# VARIABLES FOR PARKING LOT 
+bottomLeftPL = carla.Transform(carla.Location(x = 17.84, y = -11.03, z = 4))
+topLeftPL = carla.Transform(carla.Location(x = -37.04, y = -11.03, z = 4))
+topRightPL = carla.Transform(carla.Location(x = -37.04, y = -49.27, z = 4))
+bottomRightPL = carla.Transform(carla.Location(x = 17.84, y = -49.27, z = 4))
+
+
 def add_lidar(blueprint_lib, vehicle_id):
     lidar_bp = blueprint_lib.find("sensor.lidar.ray_cast")
     lidar_bp.set_attribute("channels", str(32))
@@ -195,7 +202,7 @@ def add_ego_vehicle(blueprint_lib, vehicle_id, autonomy = False, spawn_index = -
     if vehicle is not None: 
         actorList.append(vehicle)
         # return ego_vehicle
-        return vehicle, spawn_location
+    return vehicle, spawn_location
     
 def control_vehicle(vehicle, flag, spawn_loc): 
     vehicle_location = vehicle.get_location()
@@ -209,6 +216,21 @@ def control_vehicle(vehicle, flag, spawn_loc):
         vehicle.apply_control(carla.VehicleControl(throttle = 0.3, reverse = reverseBool)) 
     elif distance_from_spawn == 0 and flagCollected == True: 
         vehicle.apply_control(carla.VehicleControl(throttle = 0.0, brake = 1.0, reverse = False, handbrake = True))
+
+def spawn_vehicle_parkingLot(blueprint_lib, vehicle_id, location): 
+    init_loc = location
+    ego_vehicle = blueprint_lib.find(vehicle_id)
+    ego_vehicle.set_attribute("role_name", "hero")
+    vehicle = world.try_spawn_actor(ego_vehicle, init_loc)
+
+    if vehicle is not None: 
+        actorList.append(vehicle)
+        print("THE VEHICLE SHOULD BE SPAWNED")
+        return vehicle 
+    else: 
+        print("THE VEHICLE WAS NOT SPAWNED!")
+        return None
+    
         
 def spawn_pedestrian(location, pedestrian_id): 
     walker_bp = blueprint_library.find(pedestrian_id)
@@ -247,13 +269,24 @@ try:
     client = carla.Client("localhost", 2000)
     client.set_timeout(150.0)
 
-    client.load_world("Town04")
+    client.load_world("Town05_Opt")
 
     world = client.get_world() 
     world.set_weather(carla.WeatherParameters.ClearNoon)
     
+    # Removing unnecessary things from the map
+    world.unload_map_layer(carla.MapLayer.Buildings)
+    world.unload_map_layer(carla.MapLayer.ParkedVehicles)
+    world.unload_map_layer(carla.MapLayer.StreetLights)
+    world.unload_map_layer(carla.MapLayer.Decals)
+    world.unload_map_layer(carla.MapLayer.Foliage)
+    world.unload_map_layer(carla.MapLayer.Walls)
+    
+    # All the buildings have been removed
+        
+    
     # Setting the location of the spectator 
-    world.get_spectator().set_transform(spectator_location)
+    # world.get_spectator().set_transform(spectator_location)
     
     # Checking blueprint library 
     # printing_blueprint_lib()
@@ -294,8 +327,12 @@ try:
     # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0))
     
     # SPAWNING EGO VEHICLE 
-    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 330)
-    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
+    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 62)
+    print(vehicle.bounding_box.extent)
+    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
+    
+    # SPAWNING EGO PARKING VEHICLE 
+    # vehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
 
     # SPAWNING A PEDESTRIAN 
     # firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0030")
@@ -303,7 +340,7 @@ try:
     # thirdPedestrian = spawn_pedestrian(THIRD_PED_LOCATION, "walker.pedestrian.0002")
     # fourthPedestrian = spawn_pedestrian(FOURTH_PED_LOCATION, "walker.pedestrian.0034")
     
-    random_ped = spawn_ped_random(ped_locations, "walker.pedestrian.0030")
+    # random_ped = spawn_ped_random(ped_locations, "walker.pedestrian.0030")
     
     # if firstPedestrian and secondPedestrian and thirdPedestrian is not None: 
     #     print("Pedestrians Spawned Successfully!")
@@ -313,11 +350,11 @@ try:
     # SPAWNING A CRASH VEHICLE 
     # spawn_crash_vehicle()
 
-    vehicle_cam(blueprint_library, vehicle)
+    # vehicle_cam(blueprint_library, vehicle)
     # heli_cam(blueprint_library, vehicle)
     # add_lane_sensor(blueprint_library, vehicle)
-    semantic_camera(blueprint_library, vehicle)
-    add_collision_sensor(blueprint_library, vehicle)
+    # semantic_camera(blueprint_library, vehicle)
+    # add_collision_sensor(blueprint_library, vehicle)
 
     # Spawning multiple vehicles 
     # spawn_traffic(models, 50)
@@ -326,8 +363,8 @@ try:
     while True:
         world.tick()
         # Printing speed of the vehicle 
-        velocity = vehicle.get_velocity()
-        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        # velocity = vehicle.get_velocity()
+        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
         # print("The vehicle is moving at ", int(kmh), "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
@@ -339,11 +376,11 @@ try:
         #     print("REACHED 150")
         
         # Printing the location of the pedestrian 
-        vehicle_location = vehicle.get_location() 
+        # vehicle_location = vehicle.get_location() 
         
-        distance_from_flag = int(vehicle_location.distance(FLAG_LOCATION))
-        distance_from_spawn = int(vehicle_location.distance(spawn_location))
-        distance_between_fs = int(spawn_location.distance(FLAG_LOCATION))
+        # distance_from_flag = int(vehicle_location.distance(FLAG_LOCATION))
+        # distance_from_spawn = int(vehicle_location.distance(spawn_location))
+        # distance_between_fs = int(spawn_location.distance(FLAG_LOCATION))
         
         # first_ped_location = firstPedestrian.get_location() 
         # second_ped_location = secondPedestrian.get_location()

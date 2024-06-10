@@ -18,6 +18,15 @@ FIXED_DELTA_SECONDS = 0.2
 SHOW_PREVIEW = True 
 
 PEDESTRIAN_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+
+# Spawning pedestrians randomly 
+LOCATION_ONE = carla.Transform(carla.Location(x = -325.865570, y=33.573753, z=2), carla.Rotation(yaw = 180))
+LOCATION_TWO = carla.Transform(carla.Location(x = -325.865570, y = 30.573753, z = 2), carla.Rotation(yaw = 180))
+LOCATION_THREE = carla.Transform(carla.Location(x = -325.865570, y = 36.573753, z = 2), carla.Rotation(yaw = 180))
+LOCATION_FOUR = carla.Transform(carla.Location(x = -325.865570, y = 26.573753, z = 2), carla.Rotation(yaw = 180))
+
+PED_LOCATIONS = [LOCATION_ONE, LOCATION_TWO, LOCATION_THREE, LOCATION_FOUR]
+
 PUNISHMENT_VALUE = 0 
 
 class HighwayEnvPedestrian(gym.Env):
@@ -108,7 +117,7 @@ class HighwayEnvPedestrian(gym.Env):
         pedestrian_bp = self.blueprint_library.find("walker.pedestrian.0001")
         while self.pedestrian is None: 
             try:
-                self.pedestrian = self.world.try_spawn_actor(pedestrian_bp, PEDESTRIAN_LOCATION)
+                self.pedestrian = self.world.try_spawn_actor(pedestrian_bp, random.choice(PED_LOCATIONS))
             except: 
                 pass 
         
