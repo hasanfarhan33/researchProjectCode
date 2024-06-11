@@ -33,10 +33,10 @@ FLAG_LOCATION = carla.Location(x = -300.865570, y=33.573753, z=0.281942)
 flagCollected = False
 
 # VARIABLES FOR PARKING LOT 
-bottomLeftPL = carla.Transform(carla.Location(x = 17.84, y = -11.03, z = 4))
-topLeftPL = carla.Transform(carla.Location(x = -37.04, y = -11.03, z = 4))
-topRightPL = carla.Transform(carla.Location(x = -37.04, y = -49.27, z = 4))
-bottomRightPL = carla.Transform(carla.Location(x = 17.84, y = -49.27, z = 4))
+bottomLeftPL = carla.Transform(carla.Location(x = 15, y = -12.5, z = 4))
+topLeftPL = carla.Transform(carla.Location(x = -35, y = -12.5, z = 4))
+topRightPL = carla.Transform(carla.Location(x = -35, y = -47, z = 4))
+bottomRightPL = carla.Transform(carla.Location(x = 15, y = -47, z = 4))
 
 
 def add_lidar(blueprint_lib, vehicle_id):
@@ -270,6 +270,7 @@ try:
     client.set_timeout(150.0)
 
     client.load_world("Town05_Opt")
+    # client.load_world("Town05")
 
     world = client.get_world() 
     world.set_weather(carla.WeatherParameters.ClearNoon)
@@ -327,13 +328,29 @@ try:
     # ego_vehicle.apply_control(carla.VehicleControl(throttle=1.0))
     
     # SPAWNING EGO VEHICLE 
-    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 62)
-    print(vehicle.bounding_box.extent)
+    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 62)
+    # print(vehicle.bounding_box.extent)
     # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
     
     # SPAWNING EGO PARKING VEHICLE 
-    # vehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
-
+    bottomLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
+    topLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topLeftPL)
+    topRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topRightPL)
+    bottomRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomRightPL)
+    
+    
+    
+    #Calculating distance 
+    # blTlDistance = int(bottomLeftPL.distance(topLeftPL))
+    # tltRDistance = int(topLeftPL.distance(topRightPL))
+    # trBrDistance = int(topRightPL.distance(bottomRightPL))
+    # brBlDistance = int(bottomRightPL.distance(bottomLeftPL))
+    
+    # print("BL TL Distance: ", blTlDistance)
+    # print("TL TR Distance: ", tltRDistance)
+    # print("TR BR Distance: ", trBrDistance)
+    # print("BR BL Distance: ", brBlDistance)
+    
     # SPAWNING A PEDESTRIAN 
     # firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0030")
     # secondPedestrian = spawn_pedestrian(SECOND_PED_LOCATION, "walker.pedestrian.0032")
@@ -404,6 +421,21 @@ try:
         
         # control_vehicle(vehicle, flagCollected, spawn_location)
         
+        # Getting locations of parking lot corners 
+        blLocation = bottomLeftVehicle.get_location()
+        tlLocation = topLeftVehicle.get_location()
+        trLocation = topRightVehicle.get_location()
+        brLocation = bottomRightVehicle.get_location()
+        
+        blTlDistance = int(blLocation.distance(tlLocation))
+        tlTrDistance = int(tlLocation.distance(trLocation))
+        trBrDistance = int(trLocation.distance(brLocation))
+        brLrDistance = int(brLocation.distance(blLocation))
+        
+        print("\nBL TL Distance: ", blTlDistance)
+        print("TL TR Distance: ", tlTrDistance)
+        print("TR BR Distance: ", trBrDistance)
+        print("BR LR Distance: ", brLrDistance,"\n")
         
             
 
