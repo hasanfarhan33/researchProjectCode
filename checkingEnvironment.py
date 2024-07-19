@@ -1,11 +1,12 @@
 from stable_baselines3.common.env_checker import check_env
-from carEnv import CarEnv
-from highwayEnvMultiPedestrian import HighwayEnvMultiPedestrian 
-from highwayEnvPedestrian import HighwayEnvPedestrian
-from highwayFlagEnv import HighwayFlagEnv
+# from carEnv import CarEnv
+# from highwayEnvMultiPedestrian import HighwayEnvMultiPedestrian 
+# from highwayEnvPedestrian import HighwayEnvPedestrian
+# from highwayFlagEnv import HighwayFlagEnv
+from parkingLotEnv import ParkingLotEnv 
 
 # env = CarEnv()
-env = HighwayFlagEnv()
+env = ParkingLotEnv()
 episodes = 50
 
 for episode in range(episodes):
