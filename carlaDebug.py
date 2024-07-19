@@ -299,12 +299,12 @@ try:
     world.set_weather(carla.WeatherParameters.ClearNoon)
     
     # Removing unnecessary things from the map
-    # world.unload_map_layer(carla.MapLayer.Buildings)
-    # world.unload_map_layer(carla.MapLayer.ParkedVehicles)
-    # world.unload_map_layer(carla.MapLayer.StreetLights)
-    # world.unload_map_layer(carla.MapLayer.Decals)
-    # world.unload_map_layer(carla.MapLayer.Foliage)
-    # world.unload_map_layer(carla.MapLayer.Walls)
+    world.unload_map_layer(carla.MapLayer.Buildings)
+    world.unload_map_layer(carla.MapLayer.ParkedVehicles)
+    world.unload_map_layer(carla.MapLayer.StreetLights)
+    world.unload_map_layer(carla.MapLayer.Decals)
+    world.unload_map_layer(carla.MapLayer.Foliage)
+    world.unload_map_layer(carla.MapLayer.Walls)
     
     # All the buildings have been removed
         
@@ -353,16 +353,26 @@ try:
     # SPAWNING EGO VEHICLE 
     # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 62)
     # print(vehicle.bounding_box.extent)
-    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
+    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 176)
     
     # SPAWNING EGO PARKING VEHICLE 
-    # egoParkVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
-    # npc_vehicle = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocOne)
-    # npc_vehicle_two = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocTwo)
-    # npc_vehicle_three = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocThree)
-    # npc_vehicle_four = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocFour)
-    # npc_vehicle_five = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocFive)
-    # npc_vehicle_six = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocSix)
+    bottomLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
+    topLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topLeftPL)
+    topRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topRightPL)
+    bottomRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomRightPL)
+    
+    
+    
+    #Calculating distance 
+    # blTlDistance = int(bottomLeftPL.distance(topLeftPL))
+    # tltRDistance = int(topLeftPL.distance(topRightPL))
+    # trBrDistance = int(topRightPL.distance(bottomRightPL))
+    # brBlDistance = int(bottomRightPL.distance(bottomLeftPL))
+    
+    # print("BL TL Distance: ", blTlDistance)
+    # print("TL TR Distance: ", tltRDistance)
+    # print("TR BR Distance: ", trBrDistance)
+    # print("BR BL Distance: ", brBlDistance)
     
     # SPAWNING A PEDESTRIAN 
     # firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0030")
@@ -436,45 +446,20 @@ try:
         # control_vehicle(vehicle, flagCollected, spawn_location)
         
         # Getting locations of parking lot corners 
-        # blLocation = bottomLeftPL.location
-        # tlLocation = topLeftPL.location
-        # trLocation = topRightPL.location
-        # brLocation = bottomRightPL.location
+        blLocation = bottomLeftVehicle.get_location()
+        tlLocation = topLeftVehicle.get_location()
+        trLocation = topRightVehicle.get_location()
+        brLocation = bottomRightVehicle.get_location()
         
-        # blTlDistance = int(blLocation.distance(topLeftPL.location))
-        # tlTrDistance = int(tlLocation.distance(topRightPL.location))
-        # trBrDistance = int(trLocation.distance(bottomRightPL.location))
-        # brLrDistance = int(brLocation.distance(bottomLeftPL.location))
+        blTlDistance = int(blLocation.distance(tlLocation))
+        tlTrDistance = int(tlLocation.distance(trLocation))
+        trBrDistance = int(trLocation.distance(brLocation))
+        brLrDistance = int(brLocation.distance(blLocation))
         
-        # print("\nBL TL Distance: ", blTlDistance)
-        # print("TL TR Distance: ", tlTrDistance)
-        # print("TR BR Distance: ", trBrDistance)
-        # print("BR LR Distance: ", brLrDistance,"\n")
-        
-        #Trying to control the egoParkVehicle 
-        # TODO: TEST THIS SHIT!
-        # velocity = egoParkVehicle.get_velocity()
-        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        # estimated_throttle = maintain_speed(kmh, 2, 1)
-        
-        # egoParkVehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle))
-        # print("\nCurrent Speed: ", kmh, "Estimated Throttle: ", estimated_throttle)
-        
-        # cur_location = egoParkVehicle.get_location()
-        # distance_from_TL = cur_location.distance(tlLocation)
-        
-        # print(int(distance_from_TL))
-        # if int(distance_from_TL) < 8: 
-        #     Reached_TL = True 
-        
-        # if Reached_TL: 
-        #     print("Reached the corner")
-        
-        # print("\nAcceleration: ", vehicle.get_acceleration())
-        # print("Angular Velocity: ", vehicle.get_angular_velocity())
-        # print("Location: ", vehicle.get_location())
-        # print("Transform: ", vehicle.get_transform())
-        # print("Velocity: ", vehicle.get_velocity(), "\n")       
+        print("\nBL TL Distance: ", blTlDistance)
+        print("TL TR Distance: ", tlTrDistance)
+        print("TR BR Distance: ", trBrDistance)
+        print("BR LR Distance: ", brLrDistance,"\n")
         
             
 
