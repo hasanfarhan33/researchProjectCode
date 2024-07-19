@@ -14,18 +14,18 @@ IM_HEIGHT = 200
 FPS = 10
 
 
-# FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
-# SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
-# THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
-# FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
+FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
+THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
+FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
 
 # Choose a location at random 
-first_loc = carla.Transform(carla.Location(x = -325.865570, y=33.573753, z=2), carla.Rotation(yaw = 180))
-second_loc = carla.Transform(carla.Location(x = -325.865570, y = 30.573753, z = 2), carla.Rotation(yaw = 180))
-third_loc = carla.Transform(carla.Location(x = -325.865570, y = 36.573753, z = 2), carla.Rotation(yaw = 180))
-fourth_loc = carla.Transform(carla.Location(x = -325.865570, y = 26.573753, z = 2), carla.Rotation(yaw = 180))
+# first_loc = carla.Transform(carla.Location(x = -325.865570, y=33.573753, z=2), carla.Rotation(yaw = 180))
+# second_loc = carla.Transform(carla.Location(x = -325.865570, y = 30.573753, z = 2), carla.Rotation(yaw = 180))
+# third_loc = carla.Transform(carla.Location(x = -325.865570, y = 36.573753, z = 2), carla.Rotation(yaw = 180))
+# fourth_loc = carla.Transform(carla.Location(x = -325.865570, y = 26.573753, z = 2), carla.Rotation(yaw = 180))
 
-ped_locations = [first_loc, second_loc, third_loc, fourth_loc]
+# ped_locations = [first_loc, second_loc, third_loc, fourth_loc]
 
 spectator_location = carla.Transform(carla.Location(x=-365.865570, y=33.573753, z=10.0))
 
@@ -292,7 +292,7 @@ try:
     client = carla.Client("localhost", 2000)
     client.set_timeout(150.0)
 
-    client.load_world("Town05_Opt")
+    client.load_world("Town04")
     # client.load_world("Town05")
 
     world = client.get_world() 
@@ -300,7 +300,7 @@ try:
     
     # Removing unnecessary things from the map
     # world.unload_map_layer(carla.MapLayer.Buildings)
-    world.unload_map_layer(carla.MapLayer.ParkedVehicles)
+    # world.unload_map_layer(carla.MapLayer.ParkedVehicles)
     # world.unload_map_layer(carla.MapLayer.StreetLights)
     # world.unload_map_layer(carla.MapLayer.Decals)
     # world.unload_map_layer(carla.MapLayer.Foliage)
@@ -310,7 +310,7 @@ try:
         
     
     # Setting the location of the spectator 
-    # world.get_spectator().set_transform(spectator_location)
+    world.get_spectator().set_transform(spectator_location)
     
     # Checking blueprint library 
     # printing_blueprint_lib()
@@ -337,7 +337,7 @@ try:
     # print(len(spawn_points))
         
     # Checking all the spawn points 
-    # visualize_spawn_points(spawn_points)
+    visualize_spawn_points(spawn_points)
         
     # Spawning single vehicle
     # merc_car = blueprint_library.filter("vehicle.mercedes.coupe_2020")[0]
@@ -353,15 +353,15 @@ try:
     # SPAWNING EGO VEHICLE 
     # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 62)
     # print(vehicle.bounding_box.extent)
-    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 176)
+    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
     
     # SPAWNING EGO PARKING VEHICLE 
-    egoParkVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
-    npc_vehicle = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocOne)
-    npc_vehicle_two = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocTwo)
-    npc_vehicle_three = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocThree)
-    npc_vehicle_four = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocFour)
-    npc_vehicle_five = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocFive)
+    # egoParkVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
+    # npc_vehicle = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocOne)
+    # npc_vehicle_two = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocTwo)
+    # npc_vehicle_three = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocThree)
+    # npc_vehicle_four = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocFour)
+    # npc_vehicle_five = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocFive)
     # npc_vehicle_six = spawn_vehicle(blueprint_library, "vehicle.mini.cooper_s", location = npcVehicleLocSix)
     
     # SPAWNING A PEDESTRIAN 
@@ -436,15 +436,15 @@ try:
         # control_vehicle(vehicle, flagCollected, spawn_location)
         
         # Getting locations of parking lot corners 
-        blLocation = bottomLeftPL.location
-        tlLocation = topLeftPL.location
-        trLocation = topRightPL.location
-        brLocation = bottomRightPL.location
+        # blLocation = bottomLeftPL.location
+        # tlLocation = topLeftPL.location
+        # trLocation = topRightPL.location
+        # brLocation = bottomRightPL.location
         
-        blTlDistance = int(blLocation.distance(topLeftPL.location))
-        tlTrDistance = int(tlLocation.distance(topRightPL.location))
-        trBrDistance = int(trLocation.distance(bottomRightPL.location))
-        brLrDistance = int(brLocation.distance(bottomLeftPL.location))
+        # blTlDistance = int(blLocation.distance(topLeftPL.location))
+        # tlTrDistance = int(tlLocation.distance(topRightPL.location))
+        # trBrDistance = int(trLocation.distance(bottomRightPL.location))
+        # brLrDistance = int(brLocation.distance(bottomLeftPL.location))
         
         # print("\nBL TL Distance: ", blTlDistance)
         # print("TL TR Distance: ", tlTrDistance)
@@ -453,22 +453,22 @@ try:
         
         #Trying to control the egoParkVehicle 
         # TODO: TEST THIS SHIT!
-        velocity = egoParkVehicle.get_velocity()
-        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        estimated_throttle = maintain_speed(kmh, 2, 1)
+        # velocity = egoParkVehicle.get_velocity()
+        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        # estimated_throttle = maintain_speed(kmh, 2, 1)
         
         # egoParkVehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle))
         # print("\nCurrent Speed: ", kmh, "Estimated Throttle: ", estimated_throttle)
         
-        cur_location = egoParkVehicle.get_location()
-        distance_from_TL = cur_location.distance(tlLocation)
+        # cur_location = egoParkVehicle.get_location()
+        # distance_from_TL = cur_location.distance(tlLocation)
         
         # print(int(distance_from_TL))
-        if int(distance_from_TL) < 8: 
-            Reached_TL = True 
+        # if int(distance_from_TL) < 8: 
+        #     Reached_TL = True 
         
-        if Reached_TL: 
-            print("Reached the corner")
+        # if Reached_TL: 
+        #     print("Reached the corner")
         
         # print("\nAcceleration: ", vehicle.get_acceleration())
         # print("Angular Velocity: ", vehicle.get_angular_velocity())
