@@ -14,10 +14,10 @@ IM_HEIGHT = 200
 FPS = 10
 
 
-FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
-SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
-THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
-FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
+# FIRST_PED_LOCATION = carla.Transform(carla.Location(x=-325.865570, y=33.573753, z=0.281942), carla.Rotation(yaw = 180))
+# SECOND_PED_LOCATION = carla.Transform(carla.Location(x=-300.865570, y=30.573753, z=0.781942), carla.Rotation(yaw = 180))
+# THIRD_PED_LOCATION = carla.Transform(carla.Location(x = -275.865570, y=36.573753, z = 1.781942), carla.Rotation(yaw = 180))
+# FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
 
 # Choose a location at random 
 # first_loc = carla.Transform(carla.Location(x = -325.865570, y=33.573753, z=2), carla.Rotation(yaw = 180))
@@ -284,27 +284,38 @@ def maintain_speed(s, preferred_speed, speed_threshold):
     if s >= preferred_speed: 
         return 0 
     elif s < preferred_speed - speed_threshold: 
-        return 0.3 
+        return 0.7
     else: 
-        return 0.2 
+        return 0.5 
+
+# Function to spawn NPC vehicles
+def spawn_npc(blueprint_lib, vehicle_id, location): 
+    init_loc = location
+    vehicle_bp = blueprint_lib.find(vehicle_id)
+    npc_vehicle = world.try_spawn_actor(vehicle_bp, init_loc)
+    if npc_vehicle is not None: 
+        actorList.append(npc_vehicle)
+        # print("Vehicle added")
+    else: 
+        return 
 
 try:
     client = carla.Client("localhost", 2000)
     client.set_timeout(150.0)
 
     client.load_world("Town04")
-    # client.load_world("Town05")
+    # client.load_world("Town05_Opt")
 
     world = client.get_world() 
     world.set_weather(carla.WeatherParameters.ClearNoon)
     
     # Removing unnecessary things from the map
-    world.unload_map_layer(carla.MapLayer.Buildings)
-    world.unload_map_layer(carla.MapLayer.ParkedVehicles)
-    world.unload_map_layer(carla.MapLayer.StreetLights)
-    world.unload_map_layer(carla.MapLayer.Decals)
-    world.unload_map_layer(carla.MapLayer.Foliage)
-    world.unload_map_layer(carla.MapLayer.Walls)
+    # world.unload_map_layer(carla.MapLayer.Buildings)
+    # world.unload_map_layer(carla.MapLayer.ParkedVehicles)
+    # world.unload_map_layer(carla.MapLayer.StreetLights)
+    # world.unload_map_layer(carla.MapLayer.Decals)
+    # world.unload_map_layer(carla.MapLayer.Foliage)
+    # world.unload_map_layer(carla.MapLayer.Walls)
     
     # All the buildings have been removed
         
@@ -337,7 +348,7 @@ try:
     # print(len(spawn_points))
         
     # Checking all the spawn points 
-    visualize_spawn_points(spawn_points)
+    # visualize_spawn_points(spawn_points)
         
     # Spawning single vehicle
     # merc_car = blueprint_library.filter("vehicle.mercedes.coupe_2020")[0]
@@ -353,15 +364,20 @@ try:
     # SPAWNING EGO VEHICLE 
     # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 62)
     # print(vehicle.bounding_box.extent)
-    # vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 176)
+    vehicle, spawn_location = add_ego_vehicle(blueprint_library, "vehicle.tesla.model3", spawn_index = 350)
     
     # SPAWNING EGO PARKING VEHICLE 
-    bottomLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
-    topLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topLeftPL)
-    topRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topRightPL)
-    bottomRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomRightPL)
+    # bottomLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomLeftPL)
+    # topLeftVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topLeftPL)
+    # topRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = topRightPL)
+    # bottomRightVehicle = spawn_vehicle_parkingLot(blueprint_library, "vehicle.tesla.model3", location = bottomRightPL)
     
-    
+    # SPAWNING NPC VEHICLES
+    # spawn_npc(blueprint_library, "vehicle.mini.cooper_s", npcVehicleLocOne)
+    # spawn_npc(blueprint_library, "vehicle.mini.cooper_s", npcVehicleLocTwo)
+    # spawn_npc(blueprint_library, "vehicle.mini.cooper_s", npcVehicleLocThree)
+    # spawn_npc(blueprint_library, "vehicle.mini.cooper_s", npcVehicleLocFour)
+    # spawn_npc(blueprint_library, "vehicle.mini.cooper_s", npcVehicleLocFive)
     
     #Calculating distance 
     # blTlDistance = int(bottomLeftPL.distance(topLeftPL))
@@ -403,18 +419,26 @@ try:
 
     while True:
         world.tick()
+        
         # Printing speed of the vehicle 
-        # velocity = vehicle.get_velocity()
-        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-        # print("The vehicle is moving at ", int(kmh), "km/h")
+        velocity = vehicle.get_velocity()
+        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        
+        # Maintaining the speed of the vehicle 
+        estimated_throttle = maintain_speed(kmh, 60, 50)
+        vehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle, steer = 0.0, brake = 0.0))
+        
+        print("The vehicle is moving at ", int(kmh), "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
-        # distance_travelled = int(spawn_location.distance(vehicle.get_location()))
-        # print("Distance Travelled: ", distance_travelled)
-        # if distance_travelled == 100:
-        #     print("REACHED 100")
-        # elif distance_travelled == 100 + 50: 
-        #     print("REACHED 150")
+        distance_travelled = int(spawn_location.distance(vehicle.get_location()))
+        print("Distance Travelled: ", distance_travelled)
+        if distance_travelled == 50:
+            print("REACHED EASY DISTANCE")
+        elif distance_travelled == 100: 
+            print("REACHED MEDIUM DISTANCE")
+        elif distance_travelled == 200: 
+            print("REACHED HARD DISTANCE")
         
         # Printing the location of the pedestrian 
         # vehicle_location = vehicle.get_location() 
@@ -446,20 +470,20 @@ try:
         # control_vehicle(vehicle, flagCollected, spawn_location)
         
         # Getting locations of parking lot corners 
-        blLocation = bottomLeftVehicle.get_location()
-        tlLocation = topLeftVehicle.get_location()
-        trLocation = topRightVehicle.get_location()
-        brLocation = bottomRightVehicle.get_location()
+        # blLocation = bottomLeftVehicle.get_location()
+        # tlLocation = topLeftVehicle.get_location()
+        # trLocation = topRightVehicle.get_location()
+        # brLocation = bottomRightVehicle.get_location()
         
-        blTlDistance = int(blLocation.distance(tlLocation))
-        tlTrDistance = int(tlLocation.distance(trLocation))
-        trBrDistance = int(trLocation.distance(brLocation))
-        brLrDistance = int(brLocation.distance(blLocation))
+        # blTlDistance = int(blLocation.distance(tlLocation))
+        # tlTrDistance = int(tlLocation.distance(trLocation))
+        # trBrDistance = int(trLocation.distance(brLocation))
+        # brLrDistance = int(brLocation.distance(blLocation))
         
-        print("\nBL TL Distance: ", blTlDistance)
-        print("TL TR Distance: ", tlTrDistance)
-        print("TR BR Distance: ", trBrDistance)
-        print("BR LR Distance: ", brLrDistance,"\n")
+        # print("\nBL TL Distance: ", blTlDistance)
+        # print("TL TR Distance: ", tlTrDistance)
+        # print("TR BR Distance: ", trBrDistance)
+        # print("BR LR Distance: ", brLrDistance,"\n")
         
             
 

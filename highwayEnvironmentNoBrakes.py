@@ -119,6 +119,16 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         
         info = {}
         return self.frontCamera / 255.0, info 
+    
+    # Function to maintain the speed of the vehicle 
+    def maintain_speed(self, s, preferred_speed, speed_threshold): 
+        if s >= preferred_speed: 
+            return 0 
+        elif s < preferred_speed - speed_threshold: 
+            return 0.7 
+        else: 
+            return 0.5 
+    
         
     def step(self, action): 
         self.step_counter += 1
@@ -126,7 +136,10 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         
         # COMMENT THIS OUT IF YOU WANT TO KEEP THROTTLE CONSTANT
         # throttle = action[1] 
-        THROTTLE = 0.5
+        # THROTTLE = 0.5
+        v = self.vehicle.get_velocity() 
+        kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
+        estimated_throttle = self.maintain_speed(kmh, 60, 50)
         
         # ACKERMANN SPEEDS
         EASY_SPEED = 5.55556 # 20 kph 
@@ -137,43 +150,20 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         # Mapping steering actions
         if steer == 0:
             steer = -0.025
-            self.vehicle.apply_control(carla.VehicleControl(throttle = THROTTLE, steer = float(steer)))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle, steer = float(steer)))
         elif steer == 1: 
             steer = 0.0 
-            self.vehicle.apply_control(carla.VehicleControl(throttle = THROTTLE, steer = float(steer)))
+            self.vehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle, steer = float(steer)))
         elif steer == 2: 
             steer = 0.025
-            self.vehicle.apply_control(carla.VehicleControl(throttle = THROTTLE, steer = float(steer)))
-            
-        # Mapping VEHICLEACKERMANNCONTROL 
-        # if steer == 0: 
-        #     steer = -0.0436332
-        #     self.vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = 11.1111, acceleration = 2.682, steer = float(steer)))
-        # elif steer == 1: 
-        #     steer = 0
-        #     self.vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = 11.1111, acceleration = 2.682, steer = float(steer)))
-        # elif steer == 2: 
-        #     steer = 0.0436332
-        #     self.vehicle.apply_ackermann_control(carla.VehicleAckermannControl(speed = 11.1111, acceleration = 2.682, steer = float(steer)))
-            
+            self.vehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle, steer = float(steer)))
+
         
-        # Mapping Throttle 
-        #TODO: Find better values of throttle 
-        # if throttle == 0: 
-        #     self.vehicle.apply_control(carla.VehicleControl(throttle = 0.5, steer = float(steer)))
-        # elif throttle == 1: 
-        #     self.vehicle.apply_control(carla.VehicleControl(throttle = 0.75, steer = float(steer)))
-        
-        # Keep throttle constant
-         
-            
-        v = self.vehicle.get_velocity() 
-        kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
         distance_travelled = self.spawn_location.distance(self.vehicle.get_location())
         
         # Printing steer, throttle and brake every 50 steps 
         if self.step_counter % 50 == 0: 
-            print("Steer: ", steer, "Distance: ", int(distance_travelled), "Velocity: ", kmh, "Throttle: ", THROTTLE)          
+            print("Steer: ", steer, "Distance: ", int(distance_travelled), "Velocity: ", kmh, "Throttle: ", estimated_throttle)          
             # print("Steer: ", steer, "Distance: ", int(distance_travelled), "Velocity: ", kmh)          
         camera = self.frontCamera 
         
@@ -210,7 +200,6 @@ class HighwayEnvironmentNoBrakes(gym.Env):
             self.cleanup()  
             
         # Reward for making distance
-        # TODO: FIGURE OUT BETTER DISTANCE REWARDS
         EASY_DISTANCE = 50 
         MEDIUM_DISTANCE = 100 
         HARD_DISTANCE = 200
@@ -223,7 +212,7 @@ class HighwayEnvironmentNoBrakes(gym.Env):
                 reward = (reward + EASY_DISTANCE) // len(self.lane_invasion_hist)
             else:
                 reward = reward + EASY_DISTANCE
-            print("The vehicle reached EASY DISTANCE")
+            print("REACHED EASY DISTANCE")
         # elif distance_travelled == EASY_DISTANCE + 25: 
         #     reward = reward + 60
         elif int(distance_travelled) >= MEDIUM_DISTANCE and int(distance_travelled) < HARD_DISTANCE: 
@@ -231,13 +220,13 @@ class HighwayEnvironmentNoBrakes(gym.Env):
                 reward = (reward + MEDIUM_DISTANCE) // len(self.lane_invasion_hist)
             else: 
                 reward = reward + MEDIUM_DISTANCE
-            print("The vehicle reached MEDIUM DISTANCE") 
+            print("REACHED MEDIUM DISTANCE") 
         elif int(distance_travelled) >= HARD_DISTANCE:
             if(len(self.lane_invasion_hist) != 0): 
                 reward = (reward + HARD_DISTANCE) // len(self.lane_invasion_hist)
             else: 
                 reward = reward + HARD_DISTANCE
-            print("The vehicle reached HARD DISTANCE")
+            print("REACHED HARD DISTANCE")
             
         # Check for episode duration 
         if self.episode_start + SECONDS_PER_EPISODE < time.time():

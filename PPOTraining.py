@@ -35,11 +35,11 @@ run = wandb.init(
         project = "Carla_Research_Project", 
         config = config, 
         sync_tensorboard=True, 
-        name="PPO-parkingLotSlow3rd"
+        name="PPO-aToBLowGraphicsOne"
     )
 
 # If you want to load a previous model 
-# run = wandb.init(project = "Carla_Research_Project", id = "p06s3sem", config = config, sync_tensorboard= True, resume = "must")
+# run = wandb.init(project = "Carla_Research_Project", id = "vf6s0367", config = config, sync_tensorboard= True, resume = "must")
     
 
 if wandb.run.resumed: 
@@ -52,29 +52,29 @@ print("Connecting to environment...")
 # steeringThrottleEnv = CarEnv() 
 # steeringThrottleBrakeEnv = CarEnvBrake()
 # highwayEnv = HighwayEnvironment() 
-# highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
+highwayNoBrakeEnv = HighwayEnvironmentNoBrakes()
 # pedestrianEnv = HighwayEnvPedestrian() 
 # highwayMultiPedEnv = HighwayEnvMultiPedestrian()
 # flagEnvHighway = HighwayFlagEnv() 
-parkingLot = ParkingLotEnv() 
+# parkingLot = ParkingLotEnv() 
 
 if loadPreviousModel:
     timestepNumber = 0 
-    model = PPO.load("./models/p06s3sem/model.zip", device = "cuda", env = parkingLot)
+    model = PPO.load("./models/vf6s0367/model.zip", device = "cuda", env = highwayNoBrakeEnv)
 else:
-    model = PPO(config["policy_type"], parkingLot, verbose = 1, learning_rate = LEARNING_RATE, 
+    model = PPO(config["policy_type"], highwayNoBrakeEnv, verbose = 1, learning_rate = LEARNING_RATE, 
                 tensorboard_log=f"runs/{run.id}", device = "cuda")
 
-TIMESTEPS = 250_000
+TIMESTEPS = 50_000
 iters = 0 
 
-while iters < 2: 
+while iters < 1: 
     iters += 1 
-    print(loadPreviousModel)
+    # print(loadPreviousModel)
     print("Iteration ", iters, " is to commence...")
     model.learn(total_timesteps = TIMESTEPS, 
-                callback=WandbCallback(gradient_save_freq=100_000, model_save_path = f"models/{run.id}", 
-                                       model_save_freq=100_000, verbose = 2), reset_num_timesteps=False, log_interval = 4)
+                callback=WandbCallback(gradient_save_freq=50_000, model_save_path = f"models/{run.id}", 
+                                       model_save_freq=50_000, verbose = 2), reset_num_timesteps=False, log_interval = 4)
     print("Iteration ", iters, " has been trained...")
 
 run.finish() 
