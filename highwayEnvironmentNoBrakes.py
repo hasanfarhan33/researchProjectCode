@@ -189,10 +189,10 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         truncated = False 
         
         # Punish for collision and lane invasion
-        # if len(self.collision_hist)!= 0 or len(self.lane_invasion_hist) != 0: 
-        #     terminated = True 
-        #     reward = reward - 200 
-        #     self.cleanup()
+        if len(self.collision_hist)!= 0 or len(self.lane_invasion_hist) != 0: 
+            terminated = True 
+            reward = reward - 200 
+            self.cleanup()
         
         if len(self.collision_hist) != 0: 
             terminated = True 
@@ -203,30 +203,47 @@ class HighwayEnvironmentNoBrakes(gym.Env):
         EASY_DISTANCE = 50 
         MEDIUM_DISTANCE = 100 
         HARD_DISTANCE = 200
-        if int(distance_travelled) < 10: 
-            reward = reward - 1
-        elif int(distance_travelled) < 30: 
+        
+        # SIMPLE REWARD SYSTEM 
+        # if int(distance_travelled) < 10: 
+        #     reward = reward - 1
+        # elif int(distance_travelled) < 30: 
+        #     reward = reward - 1 
+        # elif int(distance_travelled) >= EASY_DISTANCE and int(distance_travelled) < MEDIUM_DISTANCE: 
+        #     if(len(self.lane_invasion_hist) != 0):
+        #         reward = (reward + EASY_DISTANCE) // len(self.lane_invasion_hist)
+        #     else:
+        #         reward = reward + EASY_DISTANCE
+        #     print("REACHED EASY DISTANCE")
+        # # elif distance_travelled == EASY_DISTANCE + 25: 
+        # #     reward = reward + 60
+        # elif int(distance_travelled) >= MEDIUM_DISTANCE and int(distance_travelled) < HARD_DISTANCE: 
+        #     if(len(self.lane_invasion_hist) != 0):
+        #         reward = (reward + MEDIUM_DISTANCE) // len(self.lane_invasion_hist)
+        #     else: 
+        #         reward = reward + MEDIUM_DISTANCE
+        #     print("REACHED MEDIUM DISTANCE") 
+        # elif int(distance_travelled) >= HARD_DISTANCE:
+        #     if(len(self.lane_invasion_hist) != 0): 
+        #         reward = (reward + HARD_DISTANCE) // len(self.lane_invasion_hist)
+        #     else: 
+        #         reward = reward + HARD_DISTANCE
+        #     print("REACHED HARD DISTANCE")
+        
+        # HARSH REWARD SYSTEM 
+        if int(distance_travelled) < 30: 
             reward = reward - 1 
         elif int(distance_travelled) >= EASY_DISTANCE and int(distance_travelled) < MEDIUM_DISTANCE: 
-            if(len(self.lane_invasion_hist) != 0):
-                reward = (reward + EASY_DISTANCE) // len(self.lane_invasion_hist)
-            else:
-                reward = reward + EASY_DISTANCE
             print("REACHED EASY DISTANCE")
-        # elif distance_travelled == EASY_DISTANCE + 25: 
-        #     reward = reward + 60
+            reward = reward + EASY_DISTANCE 
         elif int(distance_travelled) >= MEDIUM_DISTANCE and int(distance_travelled) < HARD_DISTANCE: 
-            if(len(self.lane_invasion_hist) != 0):
-                reward = (reward + MEDIUM_DISTANCE) // len(self.lane_invasion_hist)
-            else: 
-                reward = reward + MEDIUM_DISTANCE
-            print("REACHED MEDIUM DISTANCE") 
-        elif int(distance_travelled) >= HARD_DISTANCE:
-            if(len(self.lane_invasion_hist) != 0): 
-                reward = (reward + HARD_DISTANCE) // len(self.lane_invasion_hist)
-            else: 
-                reward = reward + HARD_DISTANCE
+            print("REACHED MEDIUM DISTANCE")
+            reward = reward + MEDIUM_DISTANCE
+        elif int(distance_travelled) >= HARD_DISTANCE: 
             print("REACHED HARD DISTANCE")
+            reward = reward + HARD_DISTANCE 
+        
+        
             
         # Check for episode duration 
         if self.episode_start + SECONDS_PER_EPISODE < time.time():
