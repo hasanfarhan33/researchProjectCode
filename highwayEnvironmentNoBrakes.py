@@ -194,10 +194,10 @@ class HighwayEnvironmentNoBrakes(gym.Env):
             reward = reward - 200 
             self.cleanup()
         
-        if len(self.collision_hist) != 0: 
-            terminated = True 
-            reward = reward - 100
-            self.cleanup()  
+        # if len(self.collision_hist) != 0: 
+        #     reward = reward - 100
+        #     terminated = True 
+        #     self.cleanup()  
             
         # Reward for making distance
         EASY_DISTANCE = 50 

@@ -167,7 +167,7 @@ class ParkingLotEnv(gym.Env):
             
         v = self.vehicle.get_velocity() 
         kmh = int(3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2))
-        estimated_throttle = self.maintain_speed(kmh, 2, 1)
+        estimated_throttle = self.maintain_speed(kmh, 5, 3)
         
         # Map throttle and apply steer and throttle 
         self.vehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle, steer = steer, brake = 0.0))

@@ -20,30 +20,30 @@ FPS = 10
 # FOURTH_PED_LOCATION = carla.Transform(carla.Location(x = -250.865570, y=26.573753, z = 2.781942), carla.Rotation(yaw = 180))
 
 # Choose a location at random 
-# first_loc = carla.Transform(carla.Location(x = -325.865570, y=33.573753, z=2), carla.Rotation(yaw = 180))
-# second_loc = carla.Transform(carla.Location(x = -325.865570, y = 30.573753, z = 2), carla.Rotation(yaw = 180))
-# third_loc = carla.Transform(carla.Location(x = -325.865570, y = 36.573753, z = 2), carla.Rotation(yaw = 180))
-# fourth_loc = carla.Transform(carla.Location(x = -325.865570, y = 26.573753, z = 2), carla.Rotation(yaw = 180))
+first_loc = carla.Transform(carla.Location(x = -325.865570, y=33.573753, z=2), carla.Rotation(yaw = 180))
+second_loc = carla.Transform(carla.Location(x = -325.865570, y = 30.573753, z = 2), carla.Rotation(yaw = 180))
+third_loc = carla.Transform(carla.Location(x = -325.865570, y = 36.573753, z = 2), carla.Rotation(yaw = 180))
+fourth_loc = carla.Transform(carla.Location(x = -325.865570, y = 26.573753, z = 2), carla.Rotation(yaw = 180))
 
-# ped_locations = [first_loc, second_loc, third_loc, fourth_loc]
+ped_locations = [first_loc, second_loc, third_loc, fourth_loc]
 
 spectator_location = carla.Transform(carla.Location(x=-365.865570, y=33.573753, z=10.0))
 
-FLAG_LOCATION = carla.Location(x = -300.865570, y=33.573753, z=0.281942)
-flagCollected = False
+# FLAG_LOCATION = carla.Location(x = -300.865570, y=33.573753, z=0.281942)
+# flagCollected = False
 
 # VARIABLES FOR PARKING LOT 
-bottomLeftPL = carla.Transform(carla.Location(x = 15, y = -12.5, z = 4), carla.Rotation(yaw = 180))
-topLeftPL = carla.Transform(carla.Location(x = -35, y = -12.5, z = 4), carla.Rotation(yaw = -90))
-topRightPL = carla.Transform(carla.Location(x = -35, y = -47, z = 4), carla.Rotation(yaw = 0))
-bottomRightPL = carla.Transform(carla.Location(x = 15, y = -47, z = 4), carla.Rotation(yaw = 90))
+# bottomLeftPL = carla.Transform(carla.Location(x = 15, y = -12.5, z = 4), carla.Rotation(yaw = 180))
+# topLeftPL = carla.Transform(carla.Location(x = -35, y = -12.5, z = 4), carla.Rotation(yaw = -90))
+# topRightPL = carla.Transform(carla.Location(x = -35, y = -47, z = 4), carla.Rotation(yaw = 0))
+# bottomRightPL = carla.Transform(carla.Location(x = 15, y = -47, z = 4), carla.Rotation(yaw = 90))
 
-npcVehicleLocOne = carla.Transform(carla.Location(x= -40, y= -25.75, z= 4), carla.Rotation(yaw = -90))
-npcVehicleLocTwo = carla.Transform(carla.Location(x = -40, y= -29.5, z = 4), carla.Rotation(yaw = -90)) 
-npcVehicleLocThree = carla.Transform(carla.Location(x = -40, y = -33.5, z = 4), carla.Rotation(yaw = -90))
+# npcVehicleLocOne = carla.Transform(carla.Location(x= -40, y= -25.75, z= 4), carla.Rotation(yaw = -90))
+# npcVehicleLocTwo = carla.Transform(carla.Location(x = -40, y= -29.5, z = 4), carla.Rotation(yaw = -90)) 
+# npcVehicleLocThree = carla.Transform(carla.Location(x = -40, y = -33.5, z = 4), carla.Rotation(yaw = -90))
 
-npcVehicleLocFour = carla.Transform(carla.Location(x= 20, y= -32.75, z= 4), carla.Rotation(yaw = -90))
-npcVehicleLocFive = carla.Transform(carla.Location(x= 20, y= -26.5, z= 4), carla.Rotation(yaw = -90))
+# npcVehicleLocFour = carla.Transform(carla.Location(x= 20, y= -32.75, z= 4), carla.Rotation(yaw = -90))
+# npcVehicleLocFive = carla.Transform(carla.Location(x= 20, y= -26.5, z= 4), carla.Rotation(yaw = -90))
 # npcVehicleLocSix = carla.Transform(carla.Location(x= 19, y= -33.5, z= 4), carla.Rotation(yaw = -90))
 
 Reached_TL = False 
@@ -391,10 +391,10 @@ try:
     # print("BR BL Distance: ", brBlDistance)
     
     # SPAWNING A PEDESTRIAN 
-    # firstPedestrian = spawn_pedestrian(FIRST_PED_LOCATION, "walker.pedestrian.0030")
-    # secondPedestrian = spawn_pedestrian(SECOND_PED_LOCATION, "walker.pedestrian.0032")
-    # thirdPedestrian = spawn_pedestrian(THIRD_PED_LOCATION, "walker.pedestrian.0002")
-    # fourthPedestrian = spawn_pedestrian(FOURTH_PED_LOCATION, "walker.pedestrian.0034")
+    firstPedestrian = spawn_pedestrian(first_loc, "walker.pedestrian.0030")
+    secondPedestrian = spawn_pedestrian(second_loc, "walker.pedestrian.0032")
+    thirdPedestrian = spawn_pedestrian(third_loc, "walker.pedestrian.0002")
+    fourthPedestrian = spawn_pedestrian(fourth_loc, "walker.pedestrian.0034")
     
     # random_ped = spawn_ped_random(ped_locations, "walker.pedestrian.0030")
     
@@ -421,24 +421,24 @@ try:
         world.tick()
         
         # Printing speed of the vehicle 
-        velocity = vehicle.get_velocity()
-        kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        # velocity = vehicle.get_velocity()
+        # kmh = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
         
         # Maintaining the speed of the vehicle 
-        estimated_throttle = maintain_speed(kmh, 60, 50)
-        vehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle, steer = 0.0, brake = 0.0))
+        # estimated_throttle = maintain_speed(kmh, 60, 50)
+        # vehicle.apply_control(carla.VehicleControl(throttle = estimated_throttle, steer = 0.0, brake = 0.0))
         
-        print("The vehicle is moving at ", int(kmh), "km/h")
+        # print("The vehicle is moving at ", int(kmh), "km/h")
         # print("Distance Travelled: ", distance_travelled)
         # print("Vehicle Location: ", vehicle.get_location())
-        distance_travelled = int(spawn_location.distance(vehicle.get_location()))
-        print("Distance Travelled: ", distance_travelled)
-        if distance_travelled == 50:
-            print("REACHED EASY DISTANCE")
-        elif distance_travelled == 100: 
-            print("REACHED MEDIUM DISTANCE")
-        elif distance_travelled == 200: 
-            print("REACHED HARD DISTANCE")
+        # distance_travelled = int(spawn_location.distance(vehicle.get_location()))
+        # print("Distance Travelled: ", distance_travelled)
+        # if distance_travelled == 50:
+        #     print("REACHED EASY DISTANCE")
+        # elif distance_travelled == 100: 
+        #     print("REACHED MEDIUM DISTANCE")
+        # elif distance_travelled == 200: 
+        #     print("REACHED HARD DISTANCE")
         
         # Printing the location of the pedestrian 
         # vehicle_location = vehicle.get_location() 
